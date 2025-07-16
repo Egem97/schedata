@@ -1,0 +1,52 @@
+name: batch-alza
+
+services:
+  scheduler:
+    build: .
+    container_name: batch-alza-scheduler
+    restart: unless-stopped
+    
+    # Volúmenes para persistir datos
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro  # Configuración (solo lectura)
+      - ./logs:/app/logs                   # Logs persistentes
+      - scheduler_data:/app/data           # Datos temporales
+    
+    # Variables de entorno
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=America/Lima  # Cambiar por tu zona horaria
+      - PYTHONPATH=/app
+    
+    # Configuración de logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Healthcheck mejorado
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Configuración de red
+    networks:
+      - batch-alza-network
+
+# Volúmenes nombrados
+volumes:
+  scheduler_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/data
+
+# Redes
+networks:
+  batch-alza-network:
+    driver: bridge 
