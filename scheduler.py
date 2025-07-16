@@ -17,7 +17,7 @@ from utils.get_sheets import read_sheet
 from utils.get_token import get_config_value, get_access_token
 from utils.get_api import listar_archivos_en_carpeta_compartida, subir_archivo_con_reintento
 from utils.transform_data import recepcion_clean_data, tiempos_transform_packing_data
-
+from data.transform.packing import dataTranformTransporteControl
 # Configurar logging
 def setup_logging():
     """Configura el sistema de logging según config.yaml"""
@@ -57,12 +57,137 @@ def get_download_url_by_name(json_data, name):
     
     return None
 
-def ejecutar_proceso_principal():
+def ejecutar_proceso_proceso_packing():
     """
-    Función principal que ejecuta todo el proceso de datos
+    Función COSTOS PACKING
     """
     logger = logging.getLogger(__name__)
+    DRIVE_ID_TRANSPORTE_PACKING = "b!f3MMUg71uUqelwZOTUNO5oiKerqyJU9Ak-AZ9LzQ99ZkHDdWCq1PSIkHUkGprAyU"
+    ITEM_ID_TRANSPORTE_PACKING = "01R5XM75GZQSWFSCRU2JALC3SWHIE6ETT7"
+    FILE_NAME_TRANSPORTE_PACKING = "CONTROL TP PACKING.xlsx"
+    FILE_NAME_PROCESADO_TPPACKING = "PROCESADO TP PACKING.xlsx"
+    #CONCESIONARIO PACKING
     
+    FILE_NAME_PROCESADO_CONCESIONARIO_PACKING = "PROCESADO CONCESIONARIO PACKING.xlsx"
+
+    ##################GRAPH API########################
+    DRIVE_ID_CARPETA_STORAGE = "b!M5ucw3aa_UqBAcqv3a6affR7vTZM2a5ApFygaKCcATxyLdOhkHDiRKl9EvzaYbuR"
+    FOLDER_ID_CARPETA_STORAGE = "01XOBWFSBLVGULAQNEKNG2WR7CPRACEN7Q"
+   
+
+    try:
+        inicio = datetime.now()
+        logger.info("🚀 Iniciando proceso automatizado...")
+        logger.info("🔑 Obteniendo token de acceso...")
+        access_token = get_access_token()
+        if not access_token:
+            logger.error("❌ No se pudo obtener el token de acceso")
+            return False
+        
+
+        logger.info(f"📁 Obteniendo datos de Transporte Packing: ")
+        json_transporte_packing = listar_archivos_en_carpeta_compartida(
+            access_token,
+            DRIVE_ID_TRANSPORTE_PACKING,
+            ITEM_ID_TRANSPORTE_PACKING
+        )
+        url_excel_tp_packing = get_download_url_by_name(json_transporte_packing, FILE_NAME_TRANSPORTE_PACKING)
+        
+        if not url_excel_tp_packing:
+            logger.error(f"❌ No se encontró el archivo de volcado: {url_excel_tp_packing}")
+            return False
+            
+        tp_packing_df = pd.read_excel(url_excel_tp_packing)
+        tp_packing_df = dataTranformTransporteControl(tp_packing_df)
+        logger.info(f"✅ Datos de volcado obtenidos: {len(tp_packing_df)} filas")
+        logger.info(f"📤 Subiendo archivo '{FILE_NAME_PROCESADO_TPPACKING}' a OneDrive...")
+        resultado_subida = subir_archivo_con_reintento(
+            access_token=access_token,
+            dataframe=tp_packing_df,
+            nombre_archivo=FILE_NAME_PROCESADO_TPPACKING,
+            drive_id= DRIVE_ID_CARPETA_STORAGE,
+            folder_id= FOLDER_ID_CARPETA_STORAGE
+        )
+        
+        if resultado_subida:
+            logger.info(f"✅ Proceso completado exitosamente ({FILE_NAME_PROCESADO_TPPACKING})")
+            
+        
+        logger.info(f"📁 Obteniendo datos de Concesionario Packing: ")
+        nombres_meses = ["Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+        mes_actual = datetime.now().month
+        meses_a_leer = nombres_meses[:mes_actual-12]   
+        sheet_id = "1VJy5BMZ6ZV14K_g28AfKivqlThZiK-Dp"
+        concesonario_packing_df = pd.DataFrame()
+        
+        logger.info(f"Intentando leer datos para los meses: {', '.join(meses_a_leer)}")
+        
+        for mes in meses_a_leer:
+            sheet_name = f"Alimentacion_{mes}"
+            url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
+            
+            try:
+                df = pd.read_csv(url)
+                
+                if mes == "Junio":
+                    df = df[df.columns[:8]]
+                df.columnas = ['NRO. DOC.', 'APELLIDOS, NOMBRE', 'TIPO TRABAJADOR', 'AREA','PUESTO/LABOR', 'CANTIDAD', 'TIPO MENU', 'FECHA',]
+                
+                concesonario_packing_df = pd.concat([concesonario_packing_df,df], ignore_index=True)
+            except Exception as e:
+                logger.info(f"⚠ La hoja {sheet_name} no existe o no se pudo leer: {e}")
+                continue
+        
+        
+        logger.info(f"📤 Subiendo archivo 'Concesionario Packing' a OneDrive...")
+        resultado_subida = subir_archivo_con_reintento(
+            access_token=access_token,
+            dataframe=concesonario_packing_df,
+            nombre_archivo=FILE_NAME_PROCESADO_CONCESIONARIO_PACKING,
+            drive_id=DRIVE_ID_CARPETA_STORAGE,
+            folder_id=FOLDER_ID_CARPETA_STORAGE
+          
+        )
+        fin = datetime.now()
+        tiempo_total = fin - inicio
+        
+        if resultado_subida:
+            logger.info(f"✅ Proceso completado exitosamente")
+            logger.info(f"📁 Archivo subido: {FILE_NAME_PROCESADO_CONCESIONARIO_PACKING}")
+            logger.info(f"🎨 Formato aplicado: Encabezados en negrita, fondo azul, tabla Excel")
+            logger.info(f"⏱️ Tiempo total de ejecución: {tiempo_total}")
+            return True
+        else:
+            logger.error(f"❌ Error al subir el archivo")
+            return False
+    except Exception as e:
+        logger.error(f"❌ Error en el proceso principal: {str(e)}")
+        return False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def ejecutar_proceso_principal():
+    """
+    Función TIEMPOS PACKING
+    """
+    logger = logging.getLogger(__name__)
+    FOLDER_ID_CARPETA_STORAGE_TIEMPOS = "01XOBWFSFLMQ3FGVMGKFHLDT6X3B7U3GTZ"
+    FILE_NAME_PROCESADO_TIEMPOS_PACKING = "TIEMPOS PACKING.xlsx"
+   
     try:
         inicio = datetime.now()
         logger.info("🚀 Iniciando proceso automatizado...")
@@ -94,20 +219,35 @@ def ejecutar_proceso_principal():
             return False
         
         # Leer datos de Google Sheets
-        logger.info(f"📊 Leyendo datos de Google Sheets: {spreadsheet_id}/{sheet_name}")
+        logger.info(f"📊 Leyendo datos de Recepcion: ")
         data = read_sheet(spreadsheet_id, sheet_name)
-        df = pd.DataFrame(data[1:], columns=data[0])
-        recepcion_df = recepcion_clean_data(df)
-        logger.info(f"✅ Datos de Google Sheets procesados: {len(recepcion_df)} filas")
-        
+        recepcion_df = pd.DataFrame(data[1:], columns=data[0])
+        recepcion_df = recepcion_clean_data(recepcion_df)
+        logger.info(f"✅ Datos de Recepcion procesados: {len(recepcion_df)} filas")
+        # Obtener datos de la carpeta de enfriamiento
+        #https://docs.google.com/spreadsheets/d/1odN1K_xwdXms-7kOCk3SHtLULs3OoKyzU2fRNTRhIu8/edit?gid=0#gid=0
+        logger.info(f"📁 Obteniendo datos de enfriamiento: ")
+        enfriamiento_data = read_sheet("1odN1K_xwdXms-7kOCk3SHtLULs3OoKyzU2fRNTRhIu8", "ENFRIAMIENTO DE MP 2025")
+        enfriamiento_df = pd.DataFrame(enfriamiento_data[1:], columns=enfriamiento_data[0])
+        logger.info(f"✅ Datos de enfriamiento obtenidos: {len(enfriamiento_df)} filas")
         # Obtener datos de la carpeta de volcado
+        logger.info(f"📁 Obteniendo datos de volcado: ")
+        volcado_data = read_sheet("1jcVIIkha6fnoqN5PSMjSfoOn5tyk2_OzP0uJtC19e6Q", "BD")
+        
+        volcado_df = pd.DataFrame(volcado_data[1:], columns=volcado_data[0])
+        
+        
+        logger.info(f"✅ Datos de volcado obtenidos: {len(enfriamiento_df)} filas")
+        dff =tiempos_transform_packing_data(recepcion_df,enfriamiento_df,volcado_df)
+        logger.info(f"✅ DatosTIEMPOS PACKING procesados: {len(dff)} filas")
+        """
         logger.info(f"📁 Obteniendo datos de volcado: {archivo_volcado}")
         json_data_volcado = listar_archivos_en_carpeta_compartida(
             access_token,
-            drive_id,
-            carpeta_volcado
+            "b!M5ucw3aa_UqBAcqv3a6affR7vTZM2a5ApFygaKCcATxyLdOhkHDiRKl9EvzaYbuR",
+            "01XOBWFSDLRDZDRGI5RBEI4IZMWN5CC2NS"
         )
-        url_excel_volcado = get_download_url_by_name(json_data_volcado, archivo_volcado)
+        url_excel_volcado = get_download_url_by_name(json_data_volcado, "BD VOLCADO DE MATERIA PRIMA.xlsx")
         
         if not url_excel_volcado:
             logger.error(f"❌ No se encontró el archivo de volcado: {archivo_volcado}")
@@ -116,26 +256,13 @@ def ejecutar_proceso_principal():
         df_volcado = pd.read_excel(url_excel_volcado)
         logger.info(f"✅ Datos de volcado obtenidos: {len(df_volcado)} filas")
         
-        # Obtener datos de la carpeta de enfriamiento
-        logger.info(f"📁 Obteniendo datos de enfriamiento: {archivo_enfriamiento}")
-        json_data_recepcion = listar_archivos_en_carpeta_compartida(
-            access_token,
-            drive_id,
-            carpeta_enfriamiento
-        )
-        url_excel_enfriamiento = get_download_url_by_name(json_data_recepcion, archivo_enfriamiento)
         
-        if not url_excel_enfriamiento:
-            logger.error(f"❌ No se encontró el archivo de enfriamiento: {archivo_enfriamiento}")
-            return False
-            
-        enfriamiento_df = pd.read_excel(url_excel_enfriamiento)
-        logger.info(f"✅ Datos de enfriamiento obtenidos: {len(enfriamiento_df)} filas")
         
         # Procesar datos
         logger.info("🔄 Procesando datos...")
         dff = tiempos_transform_packing_data(recepcion_df, enfriamiento_df, df_volcado)
         logger.info(f"✅ Datos procesados: {len(dff)} filas")
+        """
         
         # Generar nombre de archivo
         if usar_timestamp:
@@ -146,21 +273,22 @@ def ejecutar_proceso_principal():
         
         # Subir el DataFrame a OneDrive
         logger.info(f"📤 Subiendo archivo '{nombre_archivo}' a OneDrive...")
-        resultado_subida = subir_archivo_con_reintento(
+        resultado2_subida = subir_archivo_con_reintento(
             access_token=access_token,
             dataframe=dff,
-            nombre_archivo=nombre_archivo,
-            drive_id=drive_id,
-            folder_id=carpeta_salida
+            nombre_archivo=FILE_NAME_PROCESADO_TIEMPOS_PACKING,
+            drive_id="b!M5ucw3aa_UqBAcqv3a6affR7vTZM2a5ApFygaKCcATxyLdOhkHDiRKl9EvzaYbuR",
+            folder_id="01XOBWFSFLMQ3FGVMGKFHLDT6X3B7U3GTZ"
+          
         )
         
         fin = datetime.now()
         tiempo_total = fin - inicio
         
         # Mostrar resultados
-        if resultado_subida:
+        if resultado2_subida:
             logger.info(f"✅ Proceso completado exitosamente")
-            logger.info(f"📁 Archivo subido: {nombre_archivo}")
+            logger.info(f"📁 Archivo subido: {FILE_NAME_PROCESADO_TIEMPOS_PACKING}")
             logger.info(f"🎨 Formato aplicado: Encabezados en negrita, fondo azul, tabla Excel")
             logger.info(f"⏱️ Tiempo total de ejecución: {tiempo_total}")
             return True
@@ -190,19 +318,23 @@ def configurar_scheduler():
     
     if interval == 'daily':
         schedule.every().day.at(time_config).do(ejecutar_proceso_principal)
+        schedule.every().day.at(time_config).do(ejecutar_proceso_proceso_packing)
         logger.info(f"⏰ Programado para ejecutarse diariamente a las {time_config}")
         
     elif interval == 'hourly':
         schedule.every().hour.do(ejecutar_proceso_principal)
+        schedule.every().hour.do(ejecutar_proceso_proceso_packing)
         logger.info(f"⏰ Programado para ejecutarse cada hora")
         
     elif interval == 'minutes':
         schedule.every(minutes).minutes.do(ejecutar_proceso_principal)
+        schedule.every(minutes).minutes.do(ejecutar_proceso_proceso_packing)
         logger.info(f"⏰ Programado para ejecutarse cada {minutes} minutos")
         
     else:
         logger.warning(f"⚠️ Interval '{interval}' no reconocido, usando 15 minutos por defecto")
         schedule.every(15).minutes.do(ejecutar_proceso_principal)
+        schedule.every(15).minutes.do(ejecutar_proceso_proceso_packing)
 
 def mostrar_configuracion():
     """
@@ -267,8 +399,10 @@ def main():
             logger.info("🤖 Modo no interactivo: omitiendo proceso inicial")
     
     if ejecutar_inicial:
-        logger.info("🔄 Ejecutando proceso inicial...")
+        logger.info("🔄 Ejecutando proceso packing...")
         ejecutar_proceso_principal()
+        ejecutar_proceso_proceso_packing()
+        
     
     # Mantener el programa corriendo
     logger.info("⚡ Sistema automatizado en funcionamiento. Presiona Ctrl+C para detener.")

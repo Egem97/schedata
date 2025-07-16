@@ -44,34 +44,42 @@ def tiempos_transform_packing_data(recpdf,enfridf,volcadodf):
     recpdf = recpdf.rename(columns={"CODIGO QR":"QR"})
     recpdf = recpdf.drop(columns=["KILOS BRUTO"])
     #ENFRIAMIENTO
+    enfridf['FECHA'] = pd.to_datetime(enfridf['FECHA'], dayfirst=True).dt.strftime('%Y-%m-%d')
     enfridf = enfridf.groupby(["FECHA","HORA INICIAL","QR","HORA FINAL"])[["FORMATO"]].count().reset_index()
     enfridf = enfridf[enfridf["FECHA"] >= "2025-07-10"]
     enfridf = enfridf.rename(columns={
-        "FECHA": "FECHA ENFRIAMIENTO",
-        "HORA FINAL": "HORA FINAL ENFRIAMIENTO",
-        #"HORA INTERMEDIA": "HORA INTERMEDIA ENFRIAMIENTO",
-        "HORA INICIAL": "HORA INICIAL ENFRIAMIENTO"
+            "FECHA": "FECHA ENFRIAMIENTO",
+            "HORA FINAL": "HORA FINAL ENFRIAMIENTO",
+            #"HORA INTERMEDIA": "HORA INTERMEDIA ENFRIAMIENTO",
+            "HORA INICIAL": "HORA INICIAL ENFRIAMIENTO"
     })
     enfridf = enfridf.drop(columns=["FORMATO"])
+    enfridf["HORA INICIAL ENFRIAMIENTO"] = pd.to_datetime(enfridf["HORA INICIAL ENFRIAMIENTO"], format='%H:%M', errors='coerce').dt.strftime('%H:%M:%S')
+    enfridf["HORA FINAL ENFRIAMIENTO"] = pd.to_datetime(enfridf["HORA FINAL ENFRIAMIENTO"], format='%H:%M', errors='coerce').dt.strftime('%H:%M:%S')
     #VOLCADO
+    
+    volcadodf['FECHA DE COSECHA'] = pd.to_datetime(volcadodf['FECHA DE COSECHA'], dayfirst=True).dt.strftime('%Y-%m-%d')
+    volcadodf['FECHA DE PROCESO'] = pd.to_datetime(volcadodf['FECHA DE PROCESO'], dayfirst=True).dt.strftime('%Y-%m-%d')
+    volcadodf["PESO NETO"] = volcadodf["PESO NETO"].str.replace(",", ".", regex=False).astype(float)
     if volcadodf["FECHA DE PROCESO"].dtype == 'object':
         volcadodf["FECHA DE PROCESO"] = pd.to_datetime(volcadodf["FECHA DE PROCESO"], errors='coerce')
-    if volcadodf["HORA INICIO"].dtype == 'object' or 'time' in str(volcadodf["HORA INICIO"].dtype):
-        volcadodf["HORA INICIO"] = volcadodf["HORA INICIO"].astype(str).str.extract(r'(\d{2}:\d{2}:\d{2})')[0]
-    elif pd.api.types.is_datetime64_any_dtype(volcadodf["HORA INICIO"]):
-        volcadodf["HORA INICIO"] = volcadodf["HORA INICIO"].dt.strftime('%H:%M:%S')
-    if volcadodf["HORA FINAL "].dtype == 'object' or 'time' in str(volcadodf["HORA FINAL "].dtype):
-        volcadodf["HORA FINAL "] = volcadodf["HORA FINAL "].astype(str).str.extract(r'(\d{2}:\d{2}:\d{2})')[0]
-    elif pd.api.types.is_datetime64_any_dtype(volcadodf["HORA FINAL "]):
-        volcadodf["HORA FINAL "] = volcadodf["HORA FINAL "].dt.strftime('%H:%M:%S')
-    volcadodf = volcadodf.groupby(["FECHA DE PROCESO","HORA INICIO","HORA FINAL ","QR","PROVEEDOR","FORMATO"])[["TIPO DE PRODUCTO"]].count().reset_index()
+    volcadodf = volcadodf.groupby(["FECHA DE PROCESO","HORA INICIO","HORA FINAL","QR","PROVEEDOR","FORMATO"])[["TIPO DE PRODUCTO"]].count().reset_index()
     volcadodf = volcadodf[volcadodf["FECHA DE PROCESO"] >= "2025-07-10"]
-    volcadodf = volcadodf.rename(columns={"HORA INICIO": "HORA INICIO PROCESO","HORA FINAL ": "HORA FINAL PROCESO"})
+    volcadodf["QR"] = volcadodf["QR"].str.strip()
+    volcadodf["HORA INICIO"] = pd.to_datetime(volcadodf["HORA INICIO"], format='%H:%M', errors='coerce').dt.strftime('%H:%M:%S')
+    volcadodf["HORA FINAL"] = pd.to_datetime(volcadodf["HORA FINAL"], format='%H:%M', errors='coerce').dt.strftime('%H:%M:%S')
+    volcadodf = volcadodf.rename(columns={"HORA INICIO": "HORA INICIO PROCESO","HORA FINAL": "HORA FINAL PROCESO"})
     volcadodf = volcadodf.drop(columns=["TIPO DE PRODUCTO"])
+    
     #JOINS
     dff = pd.merge(recpdf,enfridf,on="QR",how="left")
+    print(f"✅ hasta aqui 1")
     dff = pd.merge(dff,volcadodf,on="QR",how="left")
+    print(f"✅ hasta aqui 2")
     dff["FECHA RECEPCION"] = dff["FECHA RECEPCION"].dt.date
-    dff["FECHA ENFRIAMIENTO"] = dff["FECHA ENFRIAMIENTO"].dt.date
+    print(f"✅ hasta aqui 3")
+    #dff["FECHA ENFRIAMIENTO"] = dff["FECHA ENFRIAMIENTO"].dt.date
+    print(f"✅ hasta aqui 4")
     dff["FECHA DE PROCESO"] = dff["FECHA DE PROCESO"].dt.date
+    print(f"✅ hasta aqui 5")
     return dff

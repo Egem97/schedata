@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from datetime import datetime, time
 import openpyxl
 from openpyxl.styles import Font, PatternFill
@@ -9,9 +10,9 @@ from openpyxl.worksheet.table import Table, TableStyleInfo
 
 st.title("Test")
 
-recepcion = r"C:\Users\EdwardoGiampiereEnri\ALZA PERU PACKING S.A.C\Ansony Romero Quiñones - Recepcion/BD RECEPCION DE MATERIA PRIMA.xlsx"
-enfriamiento = r"C:\Users\EdwardoGiampiereEnri\ALZA PERU PACKING S.A.C\Ansony Romero Quiñones - Recepcion/ENFRIAMIENTO 2025.xlsx"
-volcado = r"C:\Users\EdwardoGiampiereEnri\ALZA PERU PACKING S.A.C\Ansony Romero Quiñones - Produccion\BD VOLCADO DE MATERIA PRIMA.xlsx"
+recepcion = r"BD RECEPCION DE MATERIA PRIMA.xlsx"
+enfriamiento = r"ENFRIAMIENTO 2025.xlsx"
+volcado = r"BD VOLCADO DE MATERIA PRIMA.xlsx"
 
 
 
@@ -70,7 +71,9 @@ enfridf = enfridf.drop(columns=["FORMATO"])
 st.write(enfridf.shape)
 st.write(enfridf)
 #################################################################################
-volcadodf = pd.read_excel(volcado,sheet_name="BD")
+volcadodf = pd.read_excel("BD VOLCADO DE MATERIA PRIMA.xlsx",sheet_name="BD")
+volcadodf.to_excel("test.xlsx")
+volcadodf["HORA FINAL "] = volcadodf["HORA FINAL "].fillna(pd.NaT)
 if volcadodf["FECHA DE PROCESO"].dtype == 'object':
     volcadodf["FECHA DE PROCESO"] = pd.to_datetime(volcadodf["FECHA DE PROCESO"], errors='coerce')
 if volcadodf["HORA INICIO"].dtype == 'object' or 'time' in str(volcadodf["HORA INICIO"].dtype):
@@ -81,10 +84,13 @@ if volcadodf["HORA FINAL "].dtype == 'object' or 'time' in str(volcadodf["HORA F
     volcadodf["HORA FINAL "] = volcadodf["HORA FINAL "].astype(str).str.extract(r'(\d{2}:\d{2}:\d{2})')[0]
 elif pd.api.types.is_datetime64_any_dtype(volcadodf["HORA FINAL "]):
     volcadodf["HORA FINAL "] = volcadodf["HORA FINAL "].dt.strftime('%H:%M:%S')
+
+    
 volcadodf = volcadodf.groupby(["FECHA DE PROCESO","HORA INICIO","HORA FINAL ","QR","PROVEEDOR","FORMATO"])[["TIPO DE PRODUCTO"]].count().reset_index()
 volcadodf = volcadodf[volcadodf["FECHA DE PROCESO"] >= "2025-07-10"]
 volcadodf = volcadodf.rename(columns={"HORA INICIO": "HORA INICIO PROCESO","HORA FINAL ": "HORA FINAL PROCESO"})
 volcadodf = volcadodf.drop(columns=["TIPO DE PRODUCTO"])
+volcadodf.to_excel("test.xlsx")
 st.write(volcadodf.shape)
 st.dataframe(volcadodf)
 
@@ -99,9 +105,9 @@ st.write(dff.shape)
 st.write(dff)
 #dff.to_excel("test.xlsx")
 
-#output_file = r"C:\Users\EdwardoGiampiereEnri\OneDrive - ALZA PERU GROUP S.A.C\PACKING TIEMPOS\TIEMPOS PACKING.xlsx"
-out_file_prueba = r"TIEMPOS PACKING TEST.xlsx"
-with pd.ExcelWriter(out_file_prueba, engine="openpyxl") as writer:
+output_file = r"C:\Users\EdwardoGiampiereEnri\OneDrive - ALZA PERU GROUP S.A.C\PACKING TIEMPOS\TIEMPOS PACKING.xlsx"
+#out_file_prueba = r"TIEMPOS PACKING TEST.xlsx"
+with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
     dff.to_excel(writer, index=False, sheet_name="TIEMPOS")
     ws = writer.sheets["TIEMPOS"]
 
@@ -145,7 +151,7 @@ with pd.ExcelWriter(out_file_prueba, engine="openpyxl") as writer:
     else:
         st.warning("No se pudo crear la tabla de Excel porque los encabezados no son válidos para Excel. Solo se exportó el formato básico.")
 
-st.success(f"Archivo Excel exportado con formato: {out_file_prueba}")
+st.success(f"Archivo Excel exportado con formato: {output_file}")
 
 
 
