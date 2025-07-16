@@ -288,3 +288,264 @@ Si sigues teniendo problemas:
 2. **Solución**: Usar Docker Compose v2 
 3. **Comando**: `./deploy-v2.sh deploy`
 4. **Verificación**: `docker compose version` 
+
+# 🛠️ Guía de Solución de Problemas
+
+Esta guía te ayudará a resolver los problemas más comunes al desplegar el sistema automatizado.
+
+## 🚨 Error: EOFError: EOF when reading a line
+
+### Síntomas:
+```
+EOFError: EOF when reading a line
+File "/app/scheduler.py", line 244, in main
+respuesta = input().lower().strip()
+```
+
+### Causa:
+El scheduler intenta leer entrada del usuario pero Docker está en modo no interactivo.
+
+### Solución:
+El scheduler ahora detecta automáticamente si está en modo no interactivo y usa configuración del `config.yaml`:
+
+```yaml
+scheduler:
+  interval: "minutes"
+  minutes: 15
+  ejecutar_inicial: false  # Controla si ejecuta proceso al inicio en Docker
+```
+
+### Opciones:
+- `ejecutar_inicial: false` - No ejecuta proceso al inicio (recomendado)
+- `ejecutar_inicial: true` - Ejecuta proceso una vez al inicio
+
+## 🐳 Docker no requiere sudo
+
+### Problema:
+Necesitas usar `sudo` antes de cada comando Docker:
+```bash
+sudo docker ps
+sudo docker-compose up
+```
+
+### Solución paso a paso:
+
+1. **Agregar usuario al grupo docker:**
+```bash
+sudo usermod -aG docker $USER
+```
+
+2. **Aplicar cambios:**
+```bash
+# Opción A: Cerrar sesión y volver a conectar
+exit
+# Vuelve a conectarte por SSH
+
+# Opción B: Usar newgrp (sin cerrar sesión)
+newgrp docker
+
+# Opción C: Reiniciar Docker
+sudo systemctl restart docker
+```
+
+3. **Verificar:**
+```bash
+docker --version
+docker ps
+groups $USER  # Deberías ver 'docker' en la lista
+```
+
+### Actualizar scripts después:
+Una vez configurado, puedes quitar `sudo` de los scripts:
+- `deploy.sh`
+- `deploy-v2.sh`
+- `fix_docker.sh`
+
+## 📋 Otros problemas comunes
+
+### 1. **Problema con Python 3.12+ y distutils**
+
+**Error:**
+```
+ModuleNotFoundError: No module named 'distutils'
+```
+
+**Solución:**
+```bash
+# Usar Dockerfile.simple con Python 3.11
+docker build -f Dockerfile.simple -t batch-alza-scheduler .
+```
+
+### 2. **Docker Compose v1 vs v2**
+
+**Síntomas:**
+- Comandos `docker-compose` no funcionan
+- Errores de sintaxis en docker-compose.yml
+
+**Solución:**
+```bash
+# Ejecutar script de actualización
+bash fix_docker.sh
+
+# O usar versión específica
+bash deploy-v2.sh deploy
+```
+
+### 3. **Problemas de permisos en logs**
+
+**Error:**
+```
+PermissionError: [Errno 13] Permission denied: './logs/scheduler.log'
+```
+
+**Solución:**
+```bash
+# Crear directorio de logs con permisos
+mkdir -p logs
+chmod 755 logs
+
+# O en Docker
+docker exec -it batch-alza-scheduler mkdir -p /app/logs
+```
+
+### 4. **Archivo config.yaml no encontrado**
+
+**Error:**
+```
+FileNotFoundError: [Errno 2] No such file or directory: 'config.yaml'
+```
+
+**Solución:**
+```bash
+# Copiar y editar configuración
+cp config.yaml.example config.yaml
+# Editar con tus credenciales reales
+nano config.yaml
+```
+
+### 5. **Problemas de red en Docker**
+
+**Error:**
+```
+requests.exceptions.ConnectionError: HTTPSConnectionPool
+```
+
+**Solución:**
+```bash
+# Verificar conectividad
+docker exec batch-alza-scheduler ping -c 3 google.com
+
+# Reiniciar contenedor
+docker restart batch-alza-scheduler
+```
+
+### 6. **Contenedor se detiene inmediatamente**
+
+**Debugging:**
+```bash
+# Ver logs del contenedor
+docker logs batch-alza-scheduler
+
+# Ejecutar en modo debug
+docker run -it --rm batch-alza-scheduler python -c "import sys; print(sys.version)"
+```
+
+### 7. **Credenciales inválidas**
+
+**Error:**
+```
+400 Bad Request: Invalid client credentials
+```
+
+**Solución:**
+1. Verificar `config.yaml` tiene credenciales correctas
+2. Verificar permisos en Azure Portal
+3. Regenerar client_secret si es necesario
+
+### 8. **Problemas de timezone**
+
+**Error:**
+Horarios incorrectos en logs
+
+**Solución:**
+```yaml
+# En docker-compose.yml
+environment:
+  - TZ=America/Lima  # Cambiar por tu zona horaria
+```
+
+### 9. **Memoria insuficiente**
+
+**Error:**
+```
+MemoryError: Unable to allocate array
+```
+
+**Solución:**
+```bash
+# Aumentar memoria del contenedor
+docker run -m 2g batch-alza-scheduler
+```
+
+### 10. **Archivos no encontrados en OneDrive**
+
+**Error:**
+```
+❌ No se encontró el archivo: archivo.xlsx
+```
+
+**Solución:**
+1. Verificar nombres exactos en `config.yaml`
+2. Verificar IDs de carpetas
+3. Verificar permisos del token
+
+## 🔧 Comandos útiles para debugging
+
+```bash
+# Ver estado de servicios
+docker ps -a
+docker-compose ps
+
+# Ver logs en tiempo real
+docker logs -f batch-alza-scheduler
+
+# Ejecutar shell en contenedor
+docker exec -it batch-alza-scheduler /bin/bash
+
+# Verificar configuración
+docker exec batch-alza-scheduler python -c "from utils.get_token import print_config; print_config()"
+
+# Reiniciar completamente
+docker-compose down
+docker-compose up -d
+
+# Limpiar todo (cuidado!)
+docker-compose down -v
+docker system prune -a
+```
+
+## 📞 Obtener ayuda
+
+Si los problemas persisten:
+
+1. **Revisar logs detallados:**
+```bash
+docker logs batch-alza-scheduler > debug.log 2>&1
+```
+
+2. **Verificar configuración:**
+```bash
+docker exec batch-alza-scheduler python -c "from utils.get_token import get_config_value; print(get_config_value('scheduler', 'interval'))"
+```
+
+3. **Probar conectividad:**
+```bash
+docker exec batch-alza-scheduler python -c "import requests; print(requests.get('https://httpbin.org/ip').json())"
+```
+
+4. **Verificar dependencias:**
+```bash
+docker exec batch-alza-scheduler python -c "import yaml, pandas, schedule; print('OK')"
+```
+
+Recuerda siempre verificar que tu `config.yaml` tiene las credenciales correctas y que los permisos en Azure están configurados apropiadamente. 

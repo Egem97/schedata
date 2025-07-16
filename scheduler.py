@@ -11,6 +11,7 @@ import schedule
 import time
 import logging
 import sys
+import os
 from datetime import datetime
 from utils.get_sheets import read_sheet
 from utils.get_token import get_config_value, get_access_token
@@ -223,6 +224,12 @@ def mostrar_configuracion():
         logger.info(f"Minutos: {minutes}")
     logger.info("=" * 50)
 
+def is_interactive():
+    """
+    Detecta si el script está ejecutándose en modo interactivo
+    """
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
 def main():
     """
     Función principal que inicia el sistema automatizado
@@ -239,11 +246,27 @@ def main():
     # Configurar el scheduler
     configurar_scheduler()
     
-    # Preguntar si ejecutar proceso inicial
-    print("\n¿Deseas ejecutar el proceso una vez al inicio? (s/n): ", end="")
-    respuesta = input().lower().strip()
+    # Decidir si ejecutar proceso inicial
+    ejecutar_inicial = False
     
-    if respuesta in ['s', 'si', 'sí', 'y', 'yes']:
+    if is_interactive():
+        # Modo interactivo: preguntar al usuario
+        print("\n¿Deseas ejecutar el proceso una vez al inicio? (s/n): ", end="")
+        try:
+            respuesta = input().lower().strip()
+            if respuesta in ['s', 'si', 'sí', 'y', 'yes']:
+                ejecutar_inicial = True
+        except (EOFError, KeyboardInterrupt):
+            logger.info("🤖 Modo no interactivo detectado, continuando sin ejecución inicial")
+    else:
+        # Modo no interactivo (Docker): leer configuración o usar default
+        ejecutar_inicial = get_config_value('scheduler', 'ejecutar_inicial') or False
+        if ejecutar_inicial:
+            logger.info("🤖 Modo no interactivo: ejecutando proceso inicial según configuración")
+        else:
+            logger.info("🤖 Modo no interactivo: omitiendo proceso inicial")
+    
+    if ejecutar_inicial:
         logger.info("🔄 Ejecutando proceso inicial...")
         ejecutar_proceso_principal()
     

@@ -44,6 +44,7 @@ scheduler:
   interval: "minutes"  # Opciones: daily, hourly, minutes
   time: "09:00"        # Formato HH:MM (solo para daily)
   minutes: 15          # Minutos entre ejecuciones (solo para minutes)
+  ejecutar_inicial: false  # Si true, ejecuta proceso al inicio en modo no interactivo (Docker)
 
 # === CONFIGURACIÓN LOGGING ===
 logging:

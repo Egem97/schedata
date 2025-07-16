@@ -17,6 +17,7 @@ services:
       - PYTHONUNBUFFERED=1
       - TZ=America/Lima  # Cambiar por tu zona horaria
       - PYTHONPATH=/app
+      - DOCKER_ENV=1     # Indica que está ejecutándose en Docker
     
     # Configuración de logging
     logging:
