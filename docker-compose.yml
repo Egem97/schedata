@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  scheduler:
+    build: .
+    container_name: batch-alza-scheduler
+    restart: unless-stopped
+    
+    # Volúmenes para persistir datos
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro  # Configuración (solo lectura)
+      - ./logs:/app/logs                   # Logs persistentes
+      - scheduler_data:/app/data           # Datos temporales
+    
+    # Variables de entorno
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=America/Lima  # Cambiar por tu zona horaria
+    
+    # Configuración de logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Política de reinicio
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+        window: 60s
+    
+    # Healthcheck (opcional)
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# Volúmenes nombrados
+volumes:
+  scheduler_data:
+    driver: local
+
+# Red personalizada (opcional)
+networks:
+  default:
+    driver: bridge 

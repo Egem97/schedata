@@ -1,0 +1,59 @@
+# === ARCHIVOS DE DESARROLLO ===
+.git/
+.gitignore
+.vscode/
+.idea/
+*.md
+README*
+SETUP.md
+.env
+
+# === ARCHIVOS TEMPORALES ===
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.log
+logs/
+*.tmp
+*.temp
+
+# === ENTORNO VIRTUAL ===
+env/
+venv/
+ENV/
+VENV/
+.venv/
+
+# === ARCHIVOS DE DATOS TEMPORALES ===
+*.xlsx
+*.xls
+test_data/
+temp_data/
+output_*/
+
+# === ARCHIVOS DOCKER ===
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
+
+# === ARCHIVOS JUPYTER ===
+.ipynb_checkpoints/
+*.ipynb
+
+# === ARCHIVOS SISTEMA ===
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# === ARCHIVOS BACKUP ===
+*.bak
+*.backup
+*.old
+
+# === ARCHIVOS ESPECÍFICOS DEL PROYECTO ===
+# Mantener solo config.yaml.example, no config.yaml
+config.yaml 

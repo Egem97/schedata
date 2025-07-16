@@ -1,0 +1,52 @@
+# === CONFIGURACIÓN MICROSOFT GRAPH ===
+# Credenciales de Azure Portal > App Registrations
+microsoft_graph:
+  tenant_id: "tu_tenant_id_aqui"
+  client_id: "tu_client_id_aqui"
+  client_secret: "tu_client_secret_aqui"
+
+# === CONFIGURACIÓN ONEDRIVE ===
+# IDs específicos de tu OneDrive/SharePoint
+onedrive:
+  drive_id: "tu_drive_id_aqui"
+  folder_id: "tu_folder_id_aqui"
+  
+  # Configuración de subida
+  sobrescribir_archivos: true  # Si true, sobrescribe archivos existivos
+  usar_timestamp: false        # Si true, agrega timestamp a nombres de archivo
+  
+  # Carpetas específicas del proceso
+  carpetas:
+    volcado: "id_carpeta_volcado"
+    enfriamiento: "id_carpeta_enfriamiento"
+    salida: "id_carpeta_salida"
+
+# === CONFIGURACIÓN GOOGLE SHEETS ===
+google_sheets:
+  spreadsheet_id: "tu_spreadsheet_id_aqui"
+  sheet_name: "nombre_hoja"
+
+# === CONFIGURACIÓN ARCHIVOS ===
+archivos:
+  volcado: "BD VOLCADO DE MATERIA PRIMA.xlsx"
+  enfriamiento: "ENFRIAMIENTO 2025.xlsx"
+  salida: "datos_procesados.xlsx"
+
+# === CONFIGURACIÓN PROCESAMIENTO ===
+processing:
+  excel_extensions: ['.xlsx', '.xls']
+  chunk_size: 10000  # Tamaño de chunk para procesar archivos grandes
+  max_retries: 3
+  retry_delay: 5  # segundos
+
+# === CONFIGURACIÓN SCHEDULER ===
+scheduler:
+  interval: "minutes"  # Opciones: daily, hourly, minutes
+  time: "09:00"        # Formato HH:MM (solo para daily)
+  minutes: 15          # Minutos entre ejecuciones (solo para minutes)
+
+# === CONFIGURACIÓN LOGGING ===
+logging:
+  level: "INFO"        # Niveles: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  rotation: "10 MB"    # Tamaño antes de rotar
+  retention: "30 days" # Tiempo de retención de logs 
