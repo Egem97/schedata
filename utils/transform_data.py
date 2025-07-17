@@ -1,17 +1,23 @@
 import pandas as pd
+import logging
 from utils.helpers import corregir_hora_tarde
 
 def recepcion_clean_data(df :pd.DataFrame):
     df["PESO NETO CAMPO"] = df["PESO NETO CAMPO"].str.replace(",", ".", regex=False).astype(float)
     df["KILOS BRUTO"] = df["KILOS BRUTO"].str.replace(",", ".", regex=False).astype(float)
     df["KILOS NETO"] = df["KILOS NETO"].str.replace(",", ".", regex=False).astype(float)
+    df["N° JABAS"] = df["N° JABAS"].replace('',0)
     df["N° JABAS"] = df["N° JABAS"].astype(float)
+    df["N° JARRAS"] = df["N° JARRAS"].replace('','0')
     df["N° JARRAS"] = df["N° JARRAS"].str.replace(",", ".", regex=False).astype(float)
+    df["PESO PROMEDIO JARRA"] = df["PESO PROMEDIO JARRA"].replace('',"0")
     df["PESO PROMEDIO JARRA"] = df["PESO PROMEDIO JARRA"].str.replace(",", ".", regex=False).astype(float)
     df["TEMPERATURA"] = df["TEMPERATURA"].str.replace(",", ".", regex=False).astype(float)
+    df["PESO PROMEDIO JABA"] = df["PESO PROMEDIO JABA"].replace('',"0")
     df["PESO PROMEDIO JABA"] = df["PESO PROMEDIO JABA"].str.replace(",", ".", regex=False).astype(float)
     df["DIF"] = df["DIF"].str.replace(",", ".", regex=False).astype(float)
     df["TRASLADO"] = df["TRASLADO"].str.replace(",", ".", regex=False).astype(float)
+    df["PESO PALLET"] = df["PESO PALLET"].replace('',"0")
     df["PESO PALLET"] = df["PESO PALLET"].astype(float)
     var_category = ['CODIGO QR','EMPRESA','TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET',  'PLACA','N° TARJETA PALLET','GUIA']
     var_numeric = ["KILOS BRUTO","KILOS NETO","PESO NETO CAMPO","N° JABAS","N° JARRAS"]
@@ -29,6 +35,7 @@ def recepcion_clean_data(df :pd.DataFrame):
 
 def tiempos_transform_packing_data(recpdf,enfridf,volcadodf):
     #RECEPCION
+    logger = logging.getLogger(__name__)
     if recpdf["FECHA RECEPCION"].dtype == 'object':
         recpdf["FECHA RECEPCION"] = pd.to_datetime(recpdf["FECHA RECEPCION"], errors='coerce')
     if recpdf["HORA RECEPCION"].dtype == 'object' or 'time' in str(recpdf["HORA RECEPCION"].dtype):
@@ -70,16 +77,17 @@ def tiempos_transform_packing_data(recpdf,enfridf,volcadodf):
     volcadodf["HORA FINAL"] = pd.to_datetime(volcadodf["HORA FINAL"], format='%H:%M', errors='coerce').dt.strftime('%H:%M:%S')
     volcadodf = volcadodf.rename(columns={"HORA INICIO": "HORA INICIO PROCESO","HORA FINAL": "HORA FINAL PROCESO"})
     volcadodf = volcadodf.drop(columns=["TIPO DE PRODUCTO"])
-    
+    logger.info(f"QR nulos volcado: {volcadodf['QR'].isnull().sum()}")
+    volcadodf["QR"] = volcadodf["QR"].fillna("N/A")
     #JOINS
     dff = pd.merge(recpdf,enfridf,on="QR",how="left")
-    print(f"✅ hasta aqui 1")
+    
     dff = pd.merge(dff,volcadodf,on="QR",how="left")
-    print(f"✅ hasta aqui 2")
+    
     dff["FECHA RECEPCION"] = dff["FECHA RECEPCION"].dt.date
-    print(f"✅ hasta aqui 3")
+    
     #dff["FECHA ENFRIAMIENTO"] = dff["FECHA ENFRIAMIENTO"].dt.date
-    print(f"✅ hasta aqui 4")
+    
     dff["FECHA DE PROCESO"] = dff["FECHA DE PROCESO"].dt.date
-    print(f"✅ hasta aqui 5")
+    
     return dff
