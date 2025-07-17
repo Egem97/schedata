@@ -249,24 +249,24 @@ def configurar_scheduler():
     schedule.clear()
     
     if interval == 'daily':
-        #schedule.every().day.at(time_config).do(ejecutar_proceso_principal)
-        schedule.every().day.at(time_config).do(ejecutar_proceso_proceso_packing)
+        schedule.every().day.at(time_config).do(ejecutar_proceso_principal)
+        #schedule.every().day.at(time_config).do(ejecutar_proceso_proceso_packing)
         logger.info(f"⏰ Programado para ejecutarse diariamente a las {time_config}")
         
     elif interval == 'hourly':
-        #schedule.every().hour.do(ejecutar_proceso_principal)
-        schedule.every().hour.do(ejecutar_proceso_proceso_packing)
+        schedule.every().hour.do(ejecutar_proceso_principal)
+        #schedule.every().hour.do(ejecutar_proceso_proceso_packing)
         logger.info(f"⏰ Programado para ejecutarse cada hora")
         
     elif interval == 'minutes':
-        #schedule.every(minutes).minutes.do(ejecutar_proceso_principal)
-        schedule.every(minutes).minutes.do(ejecutar_proceso_proceso_packing)
+        schedule.every(minutes).minutes.do(ejecutar_proceso_principal)
+        #schedule.every(minutes).minutes.do(ejecutar_proceso_proceso_packing)
         logger.info(f"⏰ Programado para ejecutarse cada {minutes} minutos")
         
     else:
         logger.warning(f"⚠️ Interval '{interval}' no reconocido, usando 15 minutos por defecto")
-        #schedule.every(15).minutes.do(ejecutar_proceso_principal)
-        schedule.every(15).minutes.do(ejecutar_proceso_proceso_packing)
+        schedule.every(15).minutes.do(ejecutar_proceso_principal)
+        #schedule.every(15).minutes.do(ejecutar_proceso_proceso_packing)
 
 def mostrar_configuracion():
     """
@@ -332,8 +332,8 @@ def main():
     
     if ejecutar_inicial:
         logger.info("🔄 Ejecutando proceso packing...")
-        #ejecutar_proceso_principal()
-        ejecutar_proceso_proceso_packing()
+        ejecutar_proceso_principal()
+        #ejecutar_proceso_proceso_packing()
         
     
     # Mantener el programa corriendo
