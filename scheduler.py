@@ -1,17 +1,10 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-Automatización con schedule para procesar datos y subirlos a OneDrive
-Usa la configuración del scheduler desde config.yaml
-"""
-
 import pandas as pd
 import schedule
 import time
 import logging
 import sys
 import os
+from constant import *
 from datetime import datetime
 from utils.get_sheets import read_sheet
 from utils.get_token import get_config_value, get_access_token
@@ -62,19 +55,6 @@ def ejecutar_proceso_proceso_packing():
     Función COSTOS PACKING
     """
     logger = logging.getLogger(__name__)
-    DRIVE_ID_TRANSPORTE_PACKING = "b!f3MMUg71uUqelwZOTUNO5oiKerqyJU9Ak-AZ9LzQ99ZkHDdWCq1PSIkHUkGprAyU"
-    ITEM_ID_TRANSPORTE_PACKING = "01R5XM75GZQSWFSCRU2JALC3SWHIE6ETT7"
-    FILE_NAME_TRANSPORTE_PACKING = "CONTROL TP PACKING.xlsx"
-    FILE_NAME_PROCESADO_TPPACKING = "PROCESADO TP PACKING.xlsx"
-    #CONCESIONARIO PACKING
-    
-    FILE_NAME_PROCESADO_CONCESIONARIO_PACKING = "PROCESADO CONCESIONARIO PACKING.xlsx"
-
-    ##################GRAPH API########################
-    DRIVE_ID_CARPETA_STORAGE = "b!M5ucw3aa_UqBAcqv3a6affR7vTZM2a5ApFygaKCcATxyLdOhkHDiRKl9EvzaYbuR"
-    FOLDER_ID_CARPETA_STORAGE = "01XOBWFSBLVGULAQNEKNG2WR7CPRACEN7Q"
-   
-
     try:
         inicio = datetime.now()
         logger.info("🚀 Iniciando proceso automatizado...")
@@ -185,33 +165,14 @@ def ejecutar_proceso_principal():
     Función TIEMPOS PACKING
     """
     logger = logging.getLogger(__name__)
-    FOLDER_ID_CARPETA_STORAGE_TIEMPOS = "01XOBWFSFLMQ3FGVMGKFHLDT6X3B7U3GTZ"
-    FILE_NAME_PROCESADO_TIEMPOS_PACKING = "TIEMPOS PACKING.xlsx"#"PROCESADO TIEMPOS PACKING.xlsx"#
-   
+    
     try:
         inicio = datetime.now()
         logger.info("🚀 Iniciando proceso automatizado...")
-        
-        # Obtener configuración desde config.yaml
-        drive_id = get_config_value('onedrive', 'drive_id')
-        usar_timestamp = get_config_value('onedrive', 'usar_timestamp') or False
-        
         # Configuración de Google Sheets
         spreadsheet_id = get_config_value('google_sheets', 'spreadsheet_id')
         sheet_name = get_config_value('google_sheets', 'sheet_name')
         
-        # Configuración de carpetas
-        carpetas = get_config_value('onedrive', 'carpetas')
-        carpeta_volcado = carpetas.get('volcado') if carpetas else "01XOBWFSDLRDZDRGI5RBEI4IZMWN5CC2NS"
-        carpeta_enfriamiento = carpetas.get('enfriamiento') if carpetas else "01XOBWFSGMVNZHJBTVUVA2T4UDY3TLDBTH"
-        carpeta_salida = carpetas.get('salida') if carpetas else "01XOBWFSF6Y2GOVW7725BZO354PWSELRRZ"
-        
-        # Configuración de archivos
-        archivo_volcado = get_config_value('archivos', 'volcado') or "BD VOLCADO DE MATERIA PRIMA.xlsx"
-        archivo_enfriamiento = get_config_value('archivos', 'enfriamiento') or "ENFRIAMIENTO 2025.xlsx"
-        archivo_salida = get_config_value('archivos', 'salida') or "datos_procesados.xlsx"
-        
-        # Obtener token de acceso
         logger.info("🔑 Obteniendo token de acceso...")
         access_token = get_access_token()
         if not access_token:
@@ -240,45 +201,16 @@ def ejecutar_proceso_principal():
         logger.info(f"✅ Datos de volcado obtenidos: {len(enfriamiento_df)} filas")
         dff =tiempos_transform_packing_data(recepcion_df,enfriamiento_df,volcado_df)
         logger.info(f"✅ DatosTIEMPOS PACKING procesados: {len(dff)} filas")
-        """
-        logger.info(f"📁 Obteniendo datos de volcado: {archivo_volcado}")
-        json_data_volcado = listar_archivos_en_carpeta_compartida(
-            access_token,
-            "b!M5ucw3aa_UqBAcqv3a6affR7vTZM2a5ApFygaKCcATxyLdOhkHDiRKl9EvzaYbuR",
-            "01XOBWFSDLRDZDRGI5RBEI4IZMWN5CC2NS"
-        )
-        url_excel_volcado = get_download_url_by_name(json_data_volcado, "BD VOLCADO DE MATERIA PRIMA.xlsx")
-        
-        if not url_excel_volcado:
-            logger.error(f"❌ No se encontró el archivo de volcado: {archivo_volcado}")
-            return False
-            
-        df_volcado = pd.read_excel(url_excel_volcado)
-        logger.info(f"✅ Datos de volcado obtenidos: {len(df_volcado)} filas")
-        
-        
-        
-        # Procesar datos
-        logger.info("🔄 Procesando datos...")
-        dff = tiempos_transform_packing_data(recepcion_df, enfriamiento_df, df_volcado)
-        logger.info(f"✅ Datos procesados: {len(dff)} filas")
-        """
-        
-        # Generar nombre de archivo
-        if usar_timestamp:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            nombre_archivo = f"{archivo_salida.replace('.xlsx', '')}_{timestamp}.xlsx"
-        else:
-            nombre_archivo = archivo_salida
+
         
         # Subir el DataFrame a OneDrive
-        logger.info(f"📤 Subiendo archivo '{nombre_archivo}' a OneDrive...")
+        logger.info(f"📤 Subiendo archivo '{FILE_NAME_PROCESADO_TIEMPOS_PACKING}' a OneDrive...")
         resultado2_subida = subir_archivo_con_reintento(
             access_token=access_token,
             dataframe=dff,
             nombre_archivo=FILE_NAME_PROCESADO_TIEMPOS_PACKING,
-            drive_id="b!M5ucw3aa_UqBAcqv3a6affR7vTZM2a5ApFygaKCcATxyLdOhkHDiRKl9EvzaYbuR",
-            folder_id="01XOBWFSFLMQ3FGVMGKFHLDT6X3B7U3GTZ"
+            drive_id=DRIVE_ID_CARPETA_STORAGE,
+            folder_id=FOLDER_ID_CARPETA_STORAGE_TIEMPOS
           
         )
         
@@ -317,23 +249,23 @@ def configurar_scheduler():
     schedule.clear()
     
     if interval == 'daily':
-        schedule.every().day.at(time_config).do(ejecutar_proceso_principal)
+        #schedule.every().day.at(time_config).do(ejecutar_proceso_principal)
         schedule.every().day.at(time_config).do(ejecutar_proceso_proceso_packing)
         logger.info(f"⏰ Programado para ejecutarse diariamente a las {time_config}")
         
     elif interval == 'hourly':
-        schedule.every().hour.do(ejecutar_proceso_principal)
+        #schedule.every().hour.do(ejecutar_proceso_principal)
         schedule.every().hour.do(ejecutar_proceso_proceso_packing)
         logger.info(f"⏰ Programado para ejecutarse cada hora")
         
     elif interval == 'minutes':
-        schedule.every(minutes).minutes.do(ejecutar_proceso_principal)
+        #schedule.every(minutes).minutes.do(ejecutar_proceso_principal)
         schedule.every(minutes).minutes.do(ejecutar_proceso_proceso_packing)
         logger.info(f"⏰ Programado para ejecutarse cada {minutes} minutos")
         
     else:
         logger.warning(f"⚠️ Interval '{interval}' no reconocido, usando 15 minutos por defecto")
-        schedule.every(15).minutes.do(ejecutar_proceso_principal)
+        #schedule.every(15).minutes.do(ejecutar_proceso_principal)
         schedule.every(15).minutes.do(ejecutar_proceso_proceso_packing)
 
 def mostrar_configuracion():
@@ -400,7 +332,7 @@ def main():
     
     if ejecutar_inicial:
         logger.info("🔄 Ejecutando proceso packing...")
-        ejecutar_proceso_principal()
+        #ejecutar_proceso_principal()
         ejecutar_proceso_proceso_packing()
         
     
