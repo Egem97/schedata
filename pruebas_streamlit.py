@@ -22,8 +22,7 @@ styles(1)
 st.title("Pruebas Streamlit")
 #access_token = get_access_token()
 
-#dff = producto_terminado_extract()
-url_test = r"C:\Users\EdwardoGiampiereEnri\OneDrive - ALZA PERU GROUP S.A.C\ALZA PIPELINE DATA\KG PPTO.parquet"
-st.dataframe(pd.read_parquet(url_test))
+dff = reporte_produccion_costos_transform()
+st.dataframe(dff)
 
 

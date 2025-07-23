@@ -358,3 +358,15 @@ def reporte_produccion_transform():
     
     return df
 
+def reporte_produccion_costos_transform():
+    df = reporte_produccion_transform()
+    df = df.rename(columns={
+            "Semana":"SEMANA","Fecha de proceso":"FECHA", 'Variedad':"VARIEDAD",'Fundo':"FUNDO",'Empresa':"EMPRESA",
+            "Kg Exportables":"KG_EXPORTABLES","Kg Descarte":"KG_DESCARTE","Kg Procesados":"KG_PROCESADOS"
+        })
+    
+    df = df.groupby(["SEMANA","FECHA","VARIEDAD","FUNDO","EMPRESA"])[["KG_EXPORTABLES","KG_DESCARTE","KG_PROCESADOS"]].sum().reset_index()
+    df["FECHA"] = pd.to_datetime(df["FECHA"]).dt.date
+    
+    return df
+

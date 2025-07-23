@@ -50,7 +50,7 @@ def balance_masa_load_data(access_token,tiempo_inicio):
         return False
     
 def reporte_produccion_load_data(access_token,tiempo_inicio):
-    df = reporte_produccion_transform()
+    df = reporte_produccion_costos_transform()
     logger.info(f"📤 Subiendo archivo REPORTE DE PRODUCCION a OneDrive...")
     resultado = subir_archivo_con_reintento(
         access_token=access_token,
