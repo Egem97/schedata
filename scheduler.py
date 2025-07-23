@@ -82,14 +82,21 @@ def configurar_scheduler(access_token):
     schedule.clear()
 
     try:
-        schedule.every().day.at("08:00").do(ejecutar_proceso_tipo_cambio(access_token))
+        # Programar funciones SIN ejecutarlas inmediatamente
+        schedule.every().day.at("08:00").do(ejecutar_proceso_tipo_cambio, access_token)
         logger.info(f"💱 Programado proceso de tipo de cambio para ejecutarse diariamente a las 08:00 AM")
-        schedule.every(5).minutes.do(ejecutar_proceso_principal(access_token))
-        schedule.every(17).minutes.do(ejecutar_proceso_costos(access_token))
-        schedule.every(23).minutes.do(ejecutar_proceso_bm_packing(access_token))
+        
+        schedule.every(5).minutes.do(ejecutar_proceso_principal, access_token)
+        logger.info(f"⏰ Programado proceso principal cada 5 minutos")
+        
+        schedule.every(17).minutes.do(ejecutar_proceso_costos, access_token)
+        logger.info(f"⏰ Programado proceso costos cada 17 minutos")
+        
+        schedule.every(23).minutes.do(ejecutar_proceso_bm_packing, access_token)
+        logger.info(f"⏰ Programado proceso BM packing cada 23 minutos")
         
     except Exception as e:
-        logger.error(f"Ya fue ejecutado el proceso de tipo de cambio: {str(e)}")
+        logger.error(f"Error al configurar scheduler: {str(e)}")
         return False
     
         
@@ -157,11 +164,14 @@ def main():
             logger.info("🤖 Modo no interactivo: omitiendo proceso inicial")
     
     if ejecutar_inicial:
-        logger.info("🔄 Ejecutando proceso packing...")
-        ejecutar_proceso_principal(access_token)
-        ejecutar_proceso_costos(access_token)
-        ejecutar_proceso_bm_packing(access_token)
-        #ejecutar_proceso_proceso_packing()
+        logger.info("🔄 Ejecutando procesos iniciales...")
+        try:
+            ejecutar_proceso_principal(access_token)
+            ejecutar_proceso_costos(access_token)
+            ejecutar_proceso_bm_packing(access_token)
+            logger.info("✅ Procesos iniciales completados")
+        except Exception as e:
+            logger.error(f"❌ Error en procesos iniciales: {str(e)}")
         
     
     # Mantener el programa corriendo
@@ -188,47 +198,3 @@ if __name__ == "__main__":
 
 
 
-"""
-
-def configurar_scheduler(access_token):
-
-    logger = logging.getLogger(__name__)
-    
-    # Obtener configuración del scheduler
-    interval = get_config_value('scheduler', 'interval') or 'minutes'
-    time_config = get_config_value('scheduler', 'time') or '09:00'
-    minutes = get_config_value('scheduler', 'minutes') or 15
-    
-    logger.info(f"📅 Configurando scheduler: interval={interval}")
-    
-    # Limpiar trabajos anteriores
-    schedule.clear()
-    
-    # Programar actualización de tipo de cambio diariamente a las 8:00 AM
-    try:
-        schedule.every().day.at("08:00").do(ejecutar_proceso_tipo_cambio(access_token))
-        logger.info(f"💱 Programado proceso de tipo de cambio para ejecutarse diariamente a las 08:00 AM")
-    except Exception as e:
-        logger.error(f"Ya fue ejecutado el proceso de tipo de cambio: {str(e)}")
-        return False
-    
-    if interval == 'daily':
-        schedule.every().day.at(time_config).do(ejecutar_proceso_principal(access_token))
-        #schedule.every().day.at(time_config).do(ejecutar_proceso_proceso_packing)
-        logger.info(f"⏰ Programado para ejecutarse diariamente a las {time_config}")
-        
-    elif interval == 'hourly':
-        schedule.every().hour.do(ejecutar_proceso_principal(access_token))
-        #schedule.every().hour.do(ejecutar_proceso_proceso_packing)
-        logger.info(f"⏰ Programado para ejecutarse cada hora")
-        
-    elif interval == 'minutes':
-        schedule.every(minutes).minutes.do(ejecutar_proceso_principal(access_token))
-        #schedule.every(minutes).minutes.do(ejecutar_proceso_proceso_packing)
-        logger.info(f"⏰ Programado para ejecutarse cada {minutes} minutos")
-        
-    else:
-        logger.warning(f"⚠️ Interval '{interval}' no reconocido, usando 15 minutos por defecto")
-        schedule.every(15).minutes.do(ejecutar_proceso_principal(access_token))
-        #schedule.every(15).minutes.do(ejecutar_proceso_proceso_packing)
-"""
