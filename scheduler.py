@@ -65,7 +65,7 @@ def ejecutar_proceso_tipo_cambio(access_token):
         return False
 
 
-def configurar_scheduler(access_token):
+def configurar_scheduler():
     """
     Configura el scheduler según los parámetros del config.yaml
     """
@@ -83,16 +83,16 @@ def configurar_scheduler(access_token):
 
     try:
         # Programar funciones SIN ejecutarlas inmediatamente
-        schedule.every().day.at("08:00").do(ejecutar_proceso_tipo_cambio, access_token)
+        schedule.every().day.at("08:00").do(ejecutar_proceso_tipo_cambio)
         logger.info(f"💱 Programado proceso de tipo de cambio para ejecutarse diariamente a las 08:00 AM")
         
-        schedule.every(5).minutes.do(ejecutar_proceso_principal, access_token)
+        schedule.every(5).minutes.do(ejecutar_proceso_principal)
         logger.info(f"⏰ Programado proceso principal cada 5 minutos")
         
-        schedule.every(17).minutes.do(ejecutar_proceso_costos, access_token)
+        schedule.every(17).minutes.do(ejecutar_proceso_costos )
         logger.info(f"⏰ Programado proceso costos cada 17 minutos")
         
-        schedule.every(23).minutes.do(ejecutar_proceso_bm_packing, access_token)
+        schedule.every(23).minutes.do(ejecutar_proceso_bm_packing)
         logger.info(f"⏰ Programado proceso BM packing cada 23 minutos")
         
     except Exception as e:
@@ -136,12 +136,12 @@ def main():
     
     logger.info("🚀 Iniciando sistema automatizado con Schedule...")
     logger.info("📖 Leyendo configuración desde config.yaml...")
-    access_token = get_access_token()
+    
     # Mostrar configuración
     mostrar_configuracion()
     
     # Configurar el scheduler
-    configurar_scheduler(access_token)
+    configurar_scheduler()
     
     # Decidir si ejecutar proceso inicial
     ejecutar_inicial = False
@@ -166,9 +166,9 @@ def main():
     if ejecutar_inicial:
         logger.info("🔄 Ejecutando procesos iniciales...")
         try:
-            ejecutar_proceso_principal(access_token)
-            ejecutar_proceso_costos(access_token)
-            ejecutar_proceso_bm_packing(access_token)
+            ejecutar_proceso_principal()
+            ejecutar_proceso_costos()
+            ejecutar_proceso_bm_packing()
             logger.info("✅ Procesos iniciales completados")
         except Exception as e:
             logger.error(f"❌ Error en procesos iniciales: {str(e)}")

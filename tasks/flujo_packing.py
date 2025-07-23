@@ -11,12 +11,12 @@ from data.load.packing_load import *
 
 from data.load.costos_load import *
 
-def ejecutar_proceso_principal(access_token):
+def ejecutar_proceso_principal():
     """
     Función TIEMPOS PACKING
     """
     logger = logging.getLogger(__name__)
-    
+    access_token = get_access_token()
     try:
         inicio = datetime.now()
         logger.info("🚀 Iniciando proceso automatizado...")
@@ -30,12 +30,12 @@ def ejecutar_proceso_principal(access_token):
         return False
 
 
-def ejecutar_proceso_costos(access_token):
+def ejecutar_proceso_costos():
     """
     Función TIEMPOS PACKING
     """
     logger = logging.getLogger(__name__)
-    
+    access_token = get_access_token()
     try:
         inicio = datetime.now()
         logger.info("🚀 Iniciando proceso automatizado...")
@@ -50,12 +50,12 @@ def ejecutar_proceso_costos(access_token):
         logger.error(f"❌ Error en el proceso costos: {str(e)}")
         return False
 
-def ejecutar_proceso_bm_packing(access_token):
+def ejecutar_proceso_bm_packing():
     """
     Función TIEMPOS PACKING
     """
     logger = logging.getLogger(__name__)
-    
+    access_token = get_access_token()
     try:
         inicio = datetime.now()
         logger.info("🚀 Iniciando proceso automatizado...")

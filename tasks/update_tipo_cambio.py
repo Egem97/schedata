@@ -6,10 +6,10 @@ from data.load.costos_load import tipo_cambio_load_data
 from utils.suppress_warnings import setup_pandas_warnings
 setup_pandas_warnings()
 
-def ejecutar_proceso_update_tipo_cambio(access_token):
+def ejecutar_proceso_update_tipo_cambio():
     logger = logging.getLogger(__name__)
     logger.info("🚀 Iniciando proceso de actualización de tipo de cambio...")
-    
+    access_token = get_access_token()
     try:
         logger.info("🚀 Iniciando proceso automatizado TC...")
         
