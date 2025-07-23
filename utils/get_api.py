@@ -10,6 +10,9 @@ config = load_config()
 
 MAX_RETRIES = config['processing']['max_retries']
 RETRY_DELAY = config['processing']['retry_delay']
+BASE_URL = "https://api.apis.net.pe/v2/sunat/tipo-cambio"
+TOKEN = "apis-token-16554.ZQM8MpXKbbVnqEaLmLByory531BrQp20"
+
 
 def listar_archivos_en_carpeta_compartida(access_token: str  ,drive_id: str, item_id: str):
     """
@@ -35,7 +38,7 @@ def listar_archivos_en_carpeta_compartida(access_token: str  ,drive_id: str, ite
         print(response.json())
         return []
 
-def subir_archivo(access_token: str, dataframe: pd.DataFrame, nombre_archivo: str, drive_id: str, folder_id: str) -> bool:
+def subir_archivo(access_token: str, dataframe: pd.DataFrame, nombre_archivo: str, drive_id: str, folder_id: str,type_file:str=None) -> bool:
     """
     Sube un DataFrame como archivo Excel formateado a OneDrive/SharePoint
     
@@ -53,18 +56,23 @@ def subir_archivo(access_token: str, dataframe: pd.DataFrame, nombre_archivo: st
         print(f"📊 Aplicando formato especial al archivo Excel...")
         
         # Usar la función de formato especial para crear el Excel en memoria
-        excel_data = create_format_excel_in_memory(dataframe)
+        
         
         # Construir URL para subir archivo
         url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{folder_id}:/{nombre_archivo}:/content"
         
         headers = {
             "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            "Content-Type": "application/octet-stream" if type_file == "parquet" else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         }
         
         # Realizar la petición
-        response = requests.put(url, headers=headers, data=excel_data)
+        if type_file == "parquet":
+            # Generar parquet en memoria (sin guardar archivo local)
+            parquet_buffer = dataframe.to_parquet(None)  # None = retorna bytes en memoria
+            response = requests.put(url, headers=headers, data=parquet_buffer)
+        else:
+            response = requests.put(url, headers=headers, data=create_format_excel_in_memory(dataframe))
         
         if response.status_code in [200, 201]:
             print(f"✅ Archivo '{nombre_archivo}' subido exitosamente con formato especial")
@@ -78,7 +86,7 @@ def subir_archivo(access_token: str, dataframe: pd.DataFrame, nombre_archivo: st
         print(f"❌ Error al procesar archivo: {str(e)}")
         return False
 
-def subir_archivo_con_reintento(access_token: str, dataframe: pd.DataFrame, nombre_archivo: str, drive_id: str, folder_id: str) -> bool:
+def subir_archivo_con_reintento(access_token: str, dataframe: pd.DataFrame, nombre_archivo: str, drive_id: str, folder_id: str,type_file:str=None) -> bool:
     """
     Sube un DataFrame con formato especial y reintentos automáticos
     
@@ -94,7 +102,7 @@ def subir_archivo_con_reintento(access_token: str, dataframe: pd.DataFrame, nomb
     """
     for intento in range(MAX_RETRIES):
         try:
-            resultado = subir_archivo(access_token, dataframe, nombre_archivo, drive_id, folder_id)
+            resultado = subir_archivo(access_token, dataframe, nombre_archivo, drive_id, folder_id,type_file)
             if resultado:
                 return True
             
@@ -110,6 +118,23 @@ def subir_archivo_con_reintento(access_token: str, dataframe: pd.DataFrame, nomb
     print(f"❌ No se pudo subir el archivo después de {MAX_RETRIES} intentos")
     return False
         
+
+
+def get_tc_sunat_diario(date=None):
+        headers = {
+            "Authorization": f"Bearer {TOKEN}",
+            "Accept": "application/json"
+        }
+
+        params = {"date": date}
+        response = requests.get(
+            BASE_URL,
+            headers=headers,
+            params=params,
+            timeout=30
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data
         
-        
-        
+
