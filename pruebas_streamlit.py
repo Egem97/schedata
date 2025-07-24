@@ -20,9 +20,19 @@ from data.load.costos_load import bd_costos_packing_load_data
     
 styles(1)
 st.title("Pruebas Streamlit")
-#access_token = get_access_token()
+access_token = get_access_token()
+@st.cache_data
+def dataset_ma():
+    return mayor_analitico_packing_extract(access_token)
 
-dff = reporte_produccion_costos_transform()
-st.dataframe(dff)
+df =dataset_ma()
+df["Cod. Actividad"] = df["Cod. Actividad"].str.strip()
+df["Glosa"] = df["Glosa"].str.strip()
+df =df[(df["Cod. Actividad"]=="209")&(df["Glosa"].isin(["PACKING-PESADORES","PACKING-ABASTECEDOR","PACKING-PALETIZADORES","PACKING-ENCAJADOR"])) ]
+#df["Cod. Actividad"] = df["Cod. Actividad"].str.replace("", "000")
+st.write(list(df["Glosa"].unique()))
+print(df.info()) 
+
+st.dataframe(df)
 
 

@@ -45,20 +45,17 @@ def setup_logging():
 
 
 
-def ejecutar_proceso_tipo_cambio(access_token):
+def ejecutar_proceso_tipo_cambio():
     """
     Función wrapper para actualización de tipo de cambio
     """
     logger = logging.getLogger(__name__)
-    
+   
     try:
         logger.info("🔑 Obteniendo token de acceso para tipo de cambio...")
         
-        if not access_token:
-            logger.error("❌ No se pudo obtener el token de acceso")
-            return False
             
-        return ejecutar_proceso_update_tipo_cambio(access_token)
+        return ejecutar_proceso_update_tipo_cambio()
         
     except Exception as e:
         logger.error(f"❌ Error en el proceso de tipo de cambio: {str(e)}")
@@ -80,7 +77,7 @@ def configurar_scheduler():
     
     # Limpiar trabajos anteriores
     schedule.clear()
-
+    
     try:
         # Programar funciones SIN ejecutarlas inmediatamente
         schedule.every().day.at("08:00").do(ejecutar_proceso_tipo_cambio)
