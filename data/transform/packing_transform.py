@@ -1,7 +1,7 @@
 import pandas as pd
 import logging
 from data.extract.packing_extract import *
-from utils.helpers import corregir_hora_tarde
+from utils.helpers import corregir_hora_tarde, convert_mixed_dates
 from utils.suppress_warnings import setup_pandas_warnings
 
 setup_pandas_warnings()
@@ -159,9 +159,24 @@ def producto_terminado_transform():
     logger.info(f"✅ Procesando Datos")
     df = producto_terminado_extract()
     df["Nº CAJAS"] = df["Nº CAJAS"].astype(float)
-    
-    df["F. COSECHA"] = pd.to_datetime(df["F. COSECHA"], dayfirst=True)
-    df["F. PRODUCCION"] = pd.to_datetime(df["F. PRODUCCION"], dayfirst=True)
+    df["TURNO"] = df["TURNO"].fillna("NO ESPECIFICADO")
+    df["CLIENTE"] = df["CLIENTE"].fillna("NO ESPECIFICADO")
+    df["DESCRIPCION DEL PRODUCTO"] = df["DESCRIPCION DEL PRODUCTO"].fillna("NO ESPECIFICADO")
+    df["FUNDO"] = df["FUNDO"].fillna("NO ESPECIFICADO")
+    df["VARIEDAD"] = df["VARIEDAD"].fillna("NO ESPECIFICADO")
+    df["TURNO"] = df["TURNO"].replace("", "NO ESPECIFICADO")
+    df["CLIENTE"] = df["CLIENTE"].replace("", "NO ESPECIFICADO")
+    df["DESCRIPCION DEL PRODUCTO"] = df["DESCRIPCION DEL PRODUCTO"].replace("", "NO ESPECIFICADO")
+    df["FUNDO"] = df["FUNDO"].replace("", "NO ESPECIFICADO")
+    df["VARIEDAD"] = df["VARIEDAD"].replace("", "NO ESPECIFICADO")
+
+    # Reemplazar guiones por barras
+    df["F. COSECHA"] = df["F. COSECHA"].str.replace("-", "/")
+    df["F. PRODUCCION"] = df["F. PRODUCCION"].str.replace("-", "/")
+
+    # Convertir las fechas usando la función personalizada
+    df["F. COSECHA"] = convert_mixed_dates(df["F. COSECHA"]).dt.strftime('%Y/%m/%d')
+    df["F. PRODUCCION"] = convert_mixed_dates(df["F. PRODUCCION"]).dt.strftime('%Y/%m/%d')
     df["VARIEDAD"] = df["VARIEDAD"].str.strip()
     df["FUNDO"] = df["FUNDO"].str.strip()
     df["TURNO"] = df["TURNO"].str.strip()
@@ -169,8 +184,7 @@ def producto_terminado_transform():
     df["DESCRIPCION DEL PRODUCTO"] = df["DESCRIPCION DEL PRODUCTO"].str.strip()
     #list_productos = list(reg_dff["DESCRIPCION DEL PRODUCTO"].unique())
     df =df.groupby(["SEMANA", "F. COSECHA", "F. PRODUCCION", "TURNO","CLIENTE",#"CONTENEDOR",
-            "DESCRIPCION DEL PRODUCTO","FUNDO", "VARIEDAD", ])[["Nº CAJAS"]].sum().reset_index() 
-    
+            "DESCRIPCION DEL PRODUCTO","FUNDO", "VARIEDAD" ])[["Nº CAJAS"]].sum().reset_index() 
     return df
 
 def producto_terminado_procesado_transform(agrupador,agrupadorcajas):
@@ -350,11 +364,9 @@ def reporte_produccion_transform():
         df[col] = df[col].str.replace(",", ".", regex=False).astype(float)
     
     # Convertir columnas de fecha a tipo date
-    fecha_columnas = ["Fecha de cosecha", "Fecha de proceso"]
-    for col in fecha_columnas:
-        if col in df.columns:
-            # Convertir formato "02-jun" a fecha completa con año actu  al
-            df[col] = pd.to_datetime(df[col] + "-2025", format="%d-%b-%Y", errors='coerce').dt.date
+    #fecha_columnas = ["Fecha de cosecha", "Fecha de proceso"]
+    df["Fecha de cosecha"] = pd.to_datetime(df["Fecha de cosecha"],dayfirst=True).dt.strftime('%Y-%m-%d')
+    df["Fecha de proceso"] = pd.to_datetime(df["Fecha de proceso"],dayfirst=True).dt.strftime('%Y-%m-%d')
     
     return df
 

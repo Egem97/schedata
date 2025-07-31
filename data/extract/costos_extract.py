@@ -4,7 +4,7 @@ from datetime import datetime
 from constant import *
 from utils.get_sheets import read_sheet
 from utils.get_api import listar_archivos_en_carpeta_compartida
-from utils.helpers import get_download_url_by_name
+from utils.helpers import get_download_url_by_name,get_month_name
 
 
 
@@ -79,16 +79,71 @@ def planilla_adm_packing_extract(access_token):
         access_token,
         "b!M5ucw3aa_UqBAcqv3a6affR7vTZM2a5ApFygaKCcATxyLdOhkHDiRKl9EvzaYbuR",
         "01XOBWFSEY3CTJXXAR3BGI6XE6UAGUG4UA"
+    )
+    
+    now = datetime.now()
+    year_now = now.year
+    month_number_now = now.month
+    
+    # Lista para almacenar todos los DataFrames
+    dataframes_list = []
+    
+    # Primero, cargar los datos de enero a mayo desde el archivo parquet
+    url_2025_parquet = get_download_url_by_name(data, "Planilla_ENE_MAY.parquet")
+    if url_2025_parquet:
+        try:
+            df_ene_may = pd.read_parquet(url_2025_parquet)
+            dataframes_list.append(df_ene_may)
+            logger.info(f"✅ Cargados datos de Enero-Mayo desde archivo parquet")
+        except Exception as e:
+            logger.warning(f"⚠️ No se pudo cargar el archivo parquet ENE-MAY: {e}")
+    
+    # Iterar desde junio (mes 6) hasta el mes actual
+    for month_num in range(6, month_number_now + 1):
+        month_text = get_month_name(month_num)
+        file_name = f"{month_num:02d}. PLANILLA - FIN DE MES - {month_text} {year_now}.xlsx"
+        
+        url_excel = get_download_url_by_name(data, file_name)
+        
+        if url_excel:
+            try:
+                # Leer el archivo Excel
+                df_month = pd.read_excel(url_excel, sheet_name="PLANILLA", skiprows=3)
+                dataframes_list.append(df_month)
+                logger.info(f"✅ Cargados datos de {month_text} ({month_num:02d})")
+            except Exception as e:
+                logger.warning(f"⚠️ No se pudo leer el archivo de {month_text}: {e}")
+                continue
+        else:
+            logger.warning(f"⚠️ No se encontró el archivo para {month_text}: {file_name}")
+            continue
+    
+    # Concatenar todos los DataFrames encontrados
+    if dataframes_list:
+        df_final = pd.concat(dataframes_list, ignore_index=True)
+        logger.info(f"✅ Concatenación exitosa: {len(dataframes_list)} archivos procesados, {len(df_final)} filas totales")
+        return df_final
+    else:
+        logger.error(f"❌ No se encontraron archivos de planilla para procesar")
+        return False
+    
+def planilla_obreros_packing_extract(access_token):
+    logger.info(f"📁 Obteniendo datos de planilla adm: ")
+    data = listar_archivos_en_carpeta_compartida(
+        access_token,
+        "b!M5ucw3aa_UqBAcqv3a6affR7vTZM2a5ApFygaKCcATxyLdOhkHDiRKl9EvzaYbuR",
+        "01XOBWFSEY3CTJXXAR3BGI6XE6UAGUG4UA"
         
     )
     #url_excel = get_download_url_by_name(data, "Planilla_ENE_MAY.parquet")
-    url_jun_excel = get_download_url_by_name(data, "06. PLANILLA - FIN DE MES - JUNIO 2025.xlsx")
-    url_2025_parquet = get_download_url_by_name(data, "Planilla_ENE_MAY.parquet")
-    if not url_jun_excel or not url_2025_parquet:
+    url = get_download_url_by_name(data, "PLANILLA OBREROS.xlsm")
+    
+    if not url or not url:
         logger.error(f"❌ No se encontró el archivo de Planilla Adm:")
         return False
-    return pd.read_excel(url_jun_excel,sheet_name="PLANILLA",skiprows=3),pd.read_parquet(url_2025_parquet)
-    
+    return pd.read_excel(url,sheet_name="PLANILLA DIARIA",skiprows=3)
+
+
 
 def centro_costos_packing_extract(access_token):
     logger.info(f"📁 Obteniendo datos de Centro de Costos: ")

@@ -38,7 +38,7 @@ def producto_terminado_extract():
     logger.info(f"📁 Obteniendo datos de Producto Terminado: ")
     data = read_sheet("1d5yaDOW69JW_PClEkUH63RFXCsMITPASp19hFG2pqWk", "BD")
     df = pd.DataFrame(data[1:], columns=data[0])
-    
+    df.to_excel("producto_terminado2.xlsx", index=False)
     return df
 
 def reporte_produccion_extract():

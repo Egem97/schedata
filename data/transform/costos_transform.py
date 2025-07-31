@@ -70,7 +70,7 @@ def costos_concesionario_packing_transform():
 
 def costos_planilla_adm_packing_transform(access_token,centro_costos_df):
     logger.info("🚀 Iniciando proceso de consulta de datos de costos planilla adm packing...")
-    jun_df,df_2025 = planilla_adm_packing_extract(access_token)
+    df_adm_2025 = planilla_adm_packing_extract(access_token)
     #centro_costos_df = centro_costos_packing_extract(access_token)[1]
     
     centro_costos_df = centro_costos_df.rename(columns={"PROYECTO":"COD PROYECTO"})
@@ -78,11 +78,11 @@ def costos_planilla_adm_packing_transform(access_token,centro_costos_df):
     centro_costos_df = centro_costos_df.groupby(["COD PROYECTO","DESCRIPCION PROYECTO"]).size().reset_index()
     centro_costos_df = centro_costos_df[["COD PROYECTO","DESCRIPCION PROYECTO"]]
     centro_costos_df["COD PROYECTO"] = centro_costos_df["COD PROYECTO"].str.strip()
-
+    df_adm_2025 = df_adm_2025[df_adm_2025["Mes"].notna()]
     columns = ['Mes','Cargo', 'AREA','Fecha de Ingreso', 'Afp','REM BASE', 'Asignacion Familiar','Total Ingresos','Seguro Afp', 'Total Afp', 'Essalud', 'Costos', 'ID Actividad','COD PROYECTO' ]
-    jun_df = jun_df[jun_df["Mes"].notna()]
-    df_2025["ID Actividad"] = df_2025["ID Actividad"].astype(int).astype(str)
-    df = pd.concat([df_2025,jun_df[columns]])
+    df_adm_2025["ID Actividad"] = df_adm_2025["ID Actividad"].astype(int).astype(str)
+    df = df_adm_2025[columns]
+    
     df["COD PROYECTO"] = df["COD PROYECTO"].str.strip()
     df["COD PROYECTO"] = df["COD PROYECTO"].replace({
         "PO024": "PO084","PO071": "PO084","PO061": "PO084","PO063":"PO084",
@@ -92,6 +92,48 @@ def costos_planilla_adm_packing_transform(access_token,centro_costos_df):
     })
     df = pd.merge(df,centro_costos_df,on="COD PROYECTO",how="left")
     df = df[["Mes","DESCRIPCION PROYECTO","Costos"]]
+    return df
+
+def costos_planilla_obreros_packing_transform(access_token):
+    logger.info("🚀 Iniciando proceso de consulta de datos de costos planilla obreros packing...")
+    df = planilla_obreros_packing_extract(access_token)
+    df = df[df["SEMANA"].notna()]
+    return df
+
+def horas_trabajadas_obreros_packing_transform(access_token):
+    logger.info("🚀 Iniciando proceso de consulta de datos de costos planilla obreros packing...")
+    df = costos_planilla_obreros_packing_transform(access_token)
+    df = df[["SEMANA","FECHA","LABOR","Hrs. Laboradas - Planta","CODIGO LABOR"]]
+    df["FECHA"] = pd.to_datetime(df["FECHA"])
+    df["SEMANA"] = df["FECHA"].dt.isocalendar().week
+    df["Hrs. Laboradas - Planta"] = df["Hrs. Laboradas - Planta"].fillna(0)
+    df["Hrs. Laboradas - Planta"] = df["Hrs. Laboradas - Planta"].replace({"DM":0,"-":0,"":0})
+    df["LABOR"] = df["LABOR"].fillna("NO ESPECIFICADO")
+    df["LABOR"] = df["LABOR"].str.strip()
+    df["CODIGO LABOR"] = df["CODIGO LABOR"].fillna(0)
+    #df["CODIGO LABOR"] = df["CODIGO LABOR"].str.strip()
+    df = df[(df["LABOR"].isin(["PESADORES","ABASTECEDOR","PALETIZADORES","ENCAJADOR"]))&(df["CODIGO LABOR"] == 209)]
+    df = df.groupby(["SEMANA","FECHA"])[["Hrs. Laboradas - Planta"]].sum().reset_index()
+    df = df.rename(columns={"Hrs. Laboradas - Planta":"HORAS LABORADAS"})
+    return df
+
+
+def mayor_analitico_obreros_packing_transform(access_token):
+    df = mayor_analitico_packing_extract(access_token)
+    print(df.info())
+    df["Cod. Actividad"] = df["Cod. Actividad"].str.strip()
+    df["Glosa"] = df["Glosa"].str.strip()
+    df =df[(df["Cod. Actividad"]=="209")&(df["Glosa"].isin(["PACKING-PESADORES","PACKING-ABASTECEDOR","PACKING-PALETIZADORES","PACKING-ENCAJADOR"])) ]#
+    #df =df.groupby(["Fecha","Glosa"])[["Razón Social"]].nunique().reset_index()
+    df["Semana"] = df["Fecha"].dt.isocalendar().week
+    df = df.rename(columns={"Fecha":"FECHA","Razón Social":"N° TRABAJADORES","Semana":"SEMANA"})
+    return df
+
+
+def seg_obreros_packing_transform(access_token):
+    horas_df = horas_trabajadas_obreros_packing_transform(access_token)
+    obreros_df = mayor_analitico_obreros_packing_transform(access_token)
+    df = pd.merge(horas_df,obreros_df,on=["SEMANA","FECHA"],how="left")
     return df
 
 
@@ -156,10 +198,15 @@ def procesamiento_costos_packing_transform(access_token,agrupador_costos_df,cent
 
 
 
+
+
+
+
+
 def mayor_analitico_opex_transform(access_token,agrupador_costos_df):
     logger.info("🚀 Iniciando proceso de consulta de datos de mayor analitico opex...")
     df = mayor_analitico_packing_extract(access_token)
-    
+    df = df[df["Cuenta"].notna()]
     agrupador_costos_df = agrupador_costos_df.rename(columns={"ITEM":"Descripción Proyecto"})
     agrupador_costos_df["Descripción Proyecto"] = agrupador_costos_df["Descripción Proyecto"].str.strip()
     
@@ -193,7 +240,7 @@ def mayor_analitico_opex_transform(access_token,agrupador_costos_df):
     df["Fecha"] = pd.to_datetime(df["Fecha"])
     df["AÑO"] = df["Fecha"].dt.year
     df["MES"] = df["Fecha"].dt.month
-
+    
     df["MES"] = df["MES"].apply(get_month_name)
     
     df["Cod Cta. Contable"] = df["Cod Cta. Contable"].replace("XX", "OTROS")

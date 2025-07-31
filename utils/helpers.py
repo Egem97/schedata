@@ -42,7 +42,7 @@ def split_if_colon_at_3(texto):
         return [None, texto]
     
 def get_month_name(month_number: int) -> str:
-   
+    
     if not 1 <= month_number <= 12:
         raise ValueError("El número de mes debe estar entre 1 y 12")
         
@@ -309,3 +309,29 @@ def estimate_current_planilla_by_previous(df_planilla_historica):
     ])
     df_result = df_result[["DESCRIPCION PROYECTO","FECHA","TOTAL"]]
     return df_result
+
+
+# Función para convertir fechas con formato mixto a YYYY/MM/DD
+def convert_mixed_dates(date_series):
+        def parse_date(date_str):
+            if pd.isna(date_str) or date_str == '':
+                return pd.NaT
+            
+            # Convertir a string y reemplazar guiones por barras
+            date_str = str(date_str).replace("-", "/")
+            
+            # Si ya está en formato YYYY/MM/DD, mantenerlo
+            if len(date_str.split('/')[0]) == 4:
+                try:
+                    return pd.to_datetime(date_str, format='%Y/%m/%d')
+                except:
+                    pass
+            
+            # Si está en formato DD/MM/YYYY, convertirlo
+            try:
+                return pd.to_datetime(date_str, format='%d/%m/%Y')
+            except:
+                return pd.NaT
+        
+        return date_series.apply(parse_date)
+    

@@ -24,14 +24,11 @@ access_token = get_access_token()
 @st.cache_data
 def dataset_ma():
     return mayor_analitico_packing_extract(access_token)
-
-df =dataset_ma()
-df["Cod. Actividad"] = df["Cod. Actividad"].str.strip()
-df["Glosa"] = df["Glosa"].str.strip()
-df =df[(df["Cod. Actividad"]=="209")&(df["Glosa"].isin(["PACKING-PESADORES","PACKING-ABASTECEDOR","PACKING-PALETIZADORES","PACKING-ENCAJADOR"])) ]
-#df["Cod. Actividad"] = df["Cod. Actividad"].str.replace("", "000")
-st.write(list(df["Glosa"].unique()))
-print(df.info()) 
+@st.cache_data
+def dataset_obreros():
+    return horas_trabajadas_obreros_packing_transform(access_token)
+agrupador,centro_costos_df = centro_costos_packing_extract(access_token)
+df = costos_planilla_adm_packing_transform(access_token,centro_costos_df)
 
 st.dataframe(df)
 
