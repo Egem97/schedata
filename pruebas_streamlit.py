@@ -22,14 +22,17 @@ styles(1)
 st.title("Pruebas Streamlit")
 access_token = get_access_token()
 @st.cache_data
-def dataset_ma():
-    return mayor_analitico_packing_extract(access_token)
-@st.cache_data
-def dataset_obreros():
-    return horas_trabajadas_obreros_packing_transform(access_token)
-agrupador,centro_costos_df = centro_costos_packing_extract(access_token)
-df = costos_planilla_adm_packing_transform(access_token,centro_costos_df)
+def dataset_rp_packing():
+    return reporte_produccion_extract()
 
+@st.cache_data
+def dataset_ma_packing():
+    return mayor_analitico_packing_transform(access_token)
+#agrupador,centro_costos_df = centro_costos_packing_extract(access_token)
+#rp_df = dataset_rp_packing()
+#ma_df = dataset_ma_packing()
+df = reporte_produccion_transform()
+st.dataframe(reporte_produccion_extract())
 st.dataframe(df)
 
 

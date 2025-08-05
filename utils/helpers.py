@@ -334,4 +334,10 @@ def convert_mixed_dates(date_series):
                 return pd.NaT
         
         return date_series.apply(parse_date)
-    
+
+def transform_kg_text_rp_packing(text_num):
+        if len(text_num) > 4 and (text_num[1] == "." or text_num[2] == "."):
+            text_num = text_num.replace(".", "")
+        else:
+            text_num = text_num.replace(",", ".")
+        return text_num.replace(",",".")

@@ -1,7 +1,7 @@
 import pandas as pd
 import logging
 from data.extract.packing_extract import *
-from utils.helpers import corregir_hora_tarde, convert_mixed_dates
+from utils.helpers import corregir_hora_tarde, convert_mixed_dates,transform_kg_text_rp_packing
 from utils.suppress_warnings import setup_pandas_warnings
 
 setup_pandas_warnings()
@@ -354,20 +354,22 @@ def joins_pt_transform():
 
 def reporte_produccion_transform():
     df = reporte_produccion_extract()
-    df["Kg Procesados"] = df["Kg Procesados"].str.replace(".", "", regex=False)
-    df["Kg Procesados"] = df["Kg Procesados"].str.replace(",", ".", regex=False).astype(float)
-    df["Kg Exportables"] = df["Kg Exportables"].apply(limpiar_kg_exportables)
+    df["Kg Procesados"] = df["Kg Procesados"].apply(transform_kg_text_rp_packing)
+    df["Kg Procesados"] = df["Kg Procesados"].astype(float)
+    df["%. Kg Exportables"] = df["%. Kg Exportables"].str.replace(",", ".", regex=False).astype(float)
+    
+    df["Kg Exportables"] = df["Kg Procesados"].astype(float) * (df["%. Kg Exportables"].astype(float)/100)
     df["TOTAL CAJAS EXPORTADAS"] = df["TOTAL CAJAS EXPORTADAS"].astype(int)
     
     # Convertir columnas numéricas
-    for col in ["Kg Descarte","% Descarte","Kg Sobre Peso","% Sobre Peso","Kg Merma","% Merma","% Rendimiento MP","%. Kg Exportables"]:
+    for col in ["Kg Descarte","% Descarte","Kg Sobre Peso","% Sobre Peso","Kg Merma","% Merma","% Rendimiento MP",]:
         df[col] = df[col].str.replace(",", ".", regex=False).astype(float)
     
-    # Convertir columnas de fecha a tipo date
-    #fecha_columnas = ["Fecha de cosecha", "Fecha de proceso"]
+    #
     df["Fecha de cosecha"] = pd.to_datetime(df["Fecha de cosecha"],dayfirst=True).dt.strftime('%Y-%m-%d')
     df["Fecha de proceso"] = pd.to_datetime(df["Fecha de proceso"],dayfirst=True).dt.strftime('%Y-%m-%d')
-    
+
+
     return df
 
 def reporte_produccion_costos_transform():
