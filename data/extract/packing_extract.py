@@ -2,7 +2,8 @@ import pandas as pd
 import logging
 from utils.get_sheets import read_sheet
 from constant import *
-from utils.helpers import limpiar_kg_exportables
+from utils.helpers import *
+from utils.get_api import listar_archivos_en_carpeta_compartida
 
 logger = logging.getLogger(__name__)
 
@@ -52,3 +53,25 @@ def reporte_produccion_extract():
     ]]
     
     return df
+
+
+def registro_phl_pt_extract(access_token):
+    
+    logger.info(f"📁 Obteniendo datos de PHL PT: ")
+    data = listar_archivos_en_carpeta_compartida(
+        access_token,
+        DRIVE_ID_CARPETA_STORAGE,
+        FOLDER_ID_CARPETA_STORAGE
+    )
+    url_excel = get_download_url_by_name(data, "REGISTRO DE PHL - PRODUCTO TERMINADO.xlsm")
+    if not url_excel:
+        logger.error(f"❌ No se encontró el archivo de PHL PT:")
+        return False
+    
+    return pd.read_excel(url_excel,sheet_name="TD-DATOS PT")
+
+def agrupador_rp_extract():
+    logger.info(f"📁 Obteniendo datos de AGRUPADOR RP: ")
+    
+    return pd.read_excel("./src/storage/AGRUPADOR RP.xlsx",sheet_name="AGRUPADOR RP"),pd.read_excel("./src/storage/AGRUPADOR RP.xlsx",sheet_name="AGRUPADOR DE CAJAS")
+

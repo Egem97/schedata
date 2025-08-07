@@ -45,7 +45,8 @@ def ejecutar_proceso_costos():
         mayor_analitico_packing_load_data(access_token,inicio)#MAYOR ANALITICO PACKING 
         presupuesto_packing_load_data(access_token,inicio)#PRESUPUESTO
         mayor_analitico_opex_load_data(access_token,inicio)#MAYOR ANALITICO OPEX
-            
+        horas_trabajadores_packing_load_data(access_token,inicio)#HORAS TRABAJADORES
+        registro_phl_pt_formatos_load_data(access_token,inicio)#PHL PT
     except Exception as e:
         logger.error(f"❌ Error en el proceso costos: {str(e)}")
         return False

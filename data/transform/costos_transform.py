@@ -112,7 +112,7 @@ def horas_trabajadas_obreros_packing_transform(access_token):
     df["LABOR"] = df["LABOR"].str.strip()
     df["CODIGO LABOR"] = df["CODIGO LABOR"].fillna(0)
     #df["CODIGO LABOR"] = df["CODIGO LABOR"].str.strip()
-    df = df[(df["LABOR"].isin(["PESADORES","ABASTECEDOR","PALETIZADORES","ENCAJADOR"]))&(df["CODIGO LABOR"] == 209)]
+    df = df[(df["CODIGO LABOR"].isin([209,210]))]#(df["LABOR"].isin(["PESADORES","ABASTECEDOR","PALETIZADORES","ENCAJADOR"]))&
     df = df.groupby(["SEMANA","FECHA"])[["Hrs. Laboradas - Planta"]].sum().reset_index()
     df = df.rename(columns={"Hrs. Laboradas - Planta":"HORAS LABORADAS"})
     return df
@@ -121,12 +121,16 @@ def horas_trabajadas_obreros_packing_transform(access_token):
 def mayor_analitico_obreros_packing_transform(access_token):
     df = mayor_analitico_packing_extract(access_token)
     print(df.info())
+    
     df["Cod. Actividad"] = df["Cod. Actividad"].str.strip()
     df["Glosa"] = df["Glosa"].str.strip()
-    df =df[(df["Cod. Actividad"]=="209")&(df["Glosa"].isin(["PACKING-PESADORES","PACKING-ABASTECEDOR","PACKING-PALETIZADORES","PACKING-ENCAJADOR"])) ]#
-    #df =df.groupby(["Fecha","Glosa"])[["Razón Social"]].nunique().reset_index()
+    #&
+    df =df[(df["Cod. Actividad"].isin(["209","210"])) ]#
+    
+    df =df.groupby(["Fecha","Glosa"])[["Razón Social"]].nunique().reset_index()
     df["Semana"] = df["Fecha"].dt.isocalendar().week
     df = df.rename(columns={"Fecha":"FECHA","Razón Social":"N° TRABAJADORES","Semana":"SEMANA"})
+    df = df.groupby(["SEMANA","FECHA"])[["N° TRABAJADORES"]].sum().reset_index()
     return df
 
 
@@ -134,6 +138,11 @@ def seg_obreros_packing_transform(access_token):
     horas_df = horas_trabajadas_obreros_packing_transform(access_token)
     obreros_df = mayor_analitico_obreros_packing_transform(access_token)
     df = pd.merge(horas_df,obreros_df,on=["SEMANA","FECHA"],how="left")
+    df["HORAS LABORADAS"] = df["HORAS LABORADAS"].fillna(0)
+    df["N° TRABAJADORES"] = df["N° TRABAJADORES"].fillna(0)
+    df["N° TRABAJADORES"] = df["N° TRABAJADORES"].astype(int)
+    df["HORAS LABORADAS"] = df["HORAS LABORADAS"].astype(int)
+    
     return df
 
 
@@ -160,8 +169,10 @@ def procesamiento_costos_packing_transform(access_token,agrupador_costos_df,cent
     concesonario_dff["FUENTE DATOS"] = "ALMUERZOS Y CENAS" 
 
     plani_df = structure_planilla_historica_like_estimate(plan_adm_df)
+    
     try:
         plani_df_last_month = estimate_current_planilla_by_previous(plan_adm_df)
+        
     except Exception as e:
         print(e)
 
@@ -172,7 +183,7 @@ def procesamiento_costos_packing_transform(access_token,agrupador_costos_df,cent
     plani_dff["FECHA"] = pd.to_datetime(plani_dff["FECHA"]).dt.date
     plani_dff["SEMANA"] = pd.to_datetime(plani_dff["FECHA"]).dt.isocalendar().week
     plani_dff["FUENTE DATOS"] = "PLANILLA ADMINISTRATIVA"
-
+    
     concesonario_dff["FECHA"] = pd.to_datetime(concesonario_dff["FECHA"]).dt.date
     transporte_dff["FECHA"] = pd.to_datetime(transporte_dff["FECHA"]).dt.date
     plani_dff["FECHA"] = pd.to_datetime(plani_dff["FECHA"]).dt.date
@@ -182,8 +193,10 @@ def procesamiento_costos_packing_transform(access_token,agrupador_costos_df,cent
          "REMUNERACIONES RR.HH": "REMUNERACIONES RRHH.",
         
     })
+    
     data_concat_df = pd.merge(data_concat_df,agrupador_costos_df,on="DESCRIPCION PROYECTO",how="left")
     data_concat_df["FECHA"] = pd.to_datetime(data_concat_df["FECHA"])
+
     data_concat_df = pd.merge(data_concat_df,tc_df,on="FECHA",how="left")
     data_concat_df['year'] = data_concat_df['FECHA'].dt.year
     data_concat_df = data_concat_df[data_concat_df["year"]==2025]

@@ -70,3 +70,25 @@ def reporte_produccion_load_data(access_token,tiempo_inicio):
     else:
         logger.error(f"❌ Error al subir el archivo")
         return False
+
+def registro_phl_pt_formatos_load_data(access_token,tiempo_inicio):
+    df = registro_phl_pt_formatos_transform(access_token)
+    logger.info(f"📤 Subiendo archivo PHL PRODUCTO TERMINADOa OneDrive...")
+    resultado = subir_archivo_con_reintento(
+        access_token=access_token,
+        dataframe=df,
+        nombre_archivo="PHL PT.parquet",
+        drive_id=DRIVE_ID_CARPETA_STORAGE,
+        folder_id=FOLDER_ID_CARPETA_STORAGE,
+        type_file="parquet"
+    )
+    fin = datetime.now()
+    if resultado:
+        logger.info(f"✅ Proceso completado exitosamente")
+        logger.info(f"📁 Archivo subido: PHL PT.parquet")
+        
+        logger.info(f"⏱️ Tiempo total de ejecución: {fin-tiempo_inicio}")
+        return True
+    else:
+        logger.error(f"❌ Error al subir el archivo")
+        return False

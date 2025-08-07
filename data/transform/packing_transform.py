@@ -384,3 +384,42 @@ def reporte_produccion_costos_transform():
     
     return df
 
+def agrupadores_rp_transform():
+    agrupador_rp_df,agrupador_cajas_df = agrupador_rp_extract()
+    agrupador_rp_df = agrupador_rp_df[agrupador_rp_df["AGRUPADOR REPORTE DE PRODUCCION"].notna()]
+    agrupador_rp_df["AGRUPADOR REPORTE DE PRODUCCION"] = agrupador_rp_df["AGRUPADOR REPORTE DE PRODUCCION"].str.strip()
+    agrupador_rp_df["PRESENTACIONES PRODUCTO TERMINADO"] = agrupador_rp_df["PRESENTACIONES PRODUCTO TERMINADO"].str.strip()
+    agrupador_cajas_df = agrupador_cajas_df[agrupador_cajas_df["AGRUPADOR"].notna()]
+    agrupador_cajas_df["AGRUPADOR"] = agrupador_cajas_df["AGRUPADOR"].str.strip()
+    agrupador_cajas_df["PRESENTACIONES"] = agrupador_cajas_df["PRESENTACIONES"].str.strip()
+    agrupador_cajas_df = agrupador_cajas_df[["PRESENTACIONES","AGRUPADOR"]]
+    return agrupador_rp_df,agrupador_cajas_df
+
+
+def registro_phl_pt_formatos_transform(access_token):
+    agrupador_rp,agrupador_cajas = agrupadores_rp_transform()
+    
+    
+    
+    df = registro_phl_pt_extract(access_token)
+    df["DESCRIPCION DEL PRODUCTO"] = df["DESCRIPCION DEL PRODUCTO"].str.strip()
+    df = df[df["F. PRODUCCION"].notna()]
+    df = df.groupby(["SEMANA","F. PRODUCCION","DESCRIPCION DEL PRODUCTO"]).agg(
+        {"CLIENTE":"count"}#"Nº CAJAS":"sum","KG EXPORTABLES ":"sum",
+    ).reset_index()
+    df["DESCRIPCION DEL PRODUCTO"] = df["DESCRIPCION DEL PRODUCTO"].replace(
+        {
+            "125 GRS C/E SAN LUCAR +22MM-M":"125 GRS C/E SAN LUCAR+22MM-M",
+            "125 GRS C/E SAN LUCAR +24MM-M":"125 GRS C/E SAN LUCAR+24MM-M",
+            "125 GRS C/E SAN LUCAR +20MM-M":"125 GRS C/E SAN LUCAR+20MM-M",
+        }
+    )
+    
+    agrupador_rp = agrupador_rp.rename(columns={"PRESENTACIONES PRODUCTO TERMINADO":"DESCRIPCION DEL PRODUCTO"})
+    agrupador_cajas = agrupador_cajas.rename(columns={"PRESENTACIONES":"AGRUPADOR REPORTE DE PRODUCCION"})
+    df = pd.merge(df,agrupador_rp,on=["DESCRIPCION DEL PRODUCTO"],how="left")
+    df = pd.merge(df,agrupador_cajas,on=["AGRUPADOR REPORTE DE PRODUCCION"],how="left")
+    df = df.rename(columns={"CLIENTE":"N° PALLETS"})
+    #df = df.rename(columns={"AGRUPADOR CAJAS":"AGRUPADOR"})
+    
+    return df

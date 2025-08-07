@@ -197,3 +197,24 @@ def ocupacion_transporte_packing_load_data(access_token,tiempo_inicio):
     else:
         logger.error(f"❌ Error al subir el archivo")
         return False
+
+def horas_trabajadores_packing_load_data(access_token,tiempo_inicio):
+    df = seg_obreros_packing_transform(access_token)
+    logger.info(f"📤 Subiendo archivo Ocupacion Transporte a OneDrive...")
+    resultado = subir_archivo_con_reintento(
+        access_token=access_token,
+        dataframe=df,
+        nombre_archivo="HORAS TRABAJADORES.parquet",
+        drive_id=DRIVE_ID_CARPETA_STORAGE,
+        folder_id=FOLDER_ID_CARPETA_STORAGE,
+        type_file="parquet"
+    )
+    fin = datetime.now()
+    if resultado:
+        logger.info(f"✅ Proceso completado exitosamente")
+        logger.info(f"📁 Archivo subido: HORAS TRABAJADORES.parquet")
+        logger.info(f"⏱️ Tiempo total de ejecución: {fin-tiempo_inicio}")
+        return True
+    else:
+        logger.error(f"❌ Error al subir el archivo")
+        return False
