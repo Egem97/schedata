@@ -314,6 +314,8 @@ def presupuesto_packing_transform(access_token):
     df["NOMBRE"] = df["NOMBRE"].fillna("XXXX")
     df["ITEM_CORREGIDO"] = df["ITEM_CORREGIDO"].replace("SEVICIOS T.I.","SERVICIOS T.I.")
     df["PERIODO"] = df["PERIODO"].astype(str)
+    df["FECHA"] = df["PERIODO"] + "01"
+    df["FECHA"] = pd.to_datetime(df["FECHA"])
     return df
 
 def kg_presupuesto_packing_transform(access_token):

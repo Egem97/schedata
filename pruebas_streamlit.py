@@ -23,7 +23,7 @@ st.title("Pruebas Streamlit")
 access_token = get_access_token()
 
 
-df = kg_presupuesto_packing_transform(access_token=access_token)
+df = presupuesto_packing_transform(access_token=access_token)
 st.dataframe(df)
 
 
