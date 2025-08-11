@@ -1,6 +1,6 @@
 import pandas as pd
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from constant import *
 from utils.get_sheets import read_sheet
 from utils.get_api import listar_archivos_en_carpeta_compartida
@@ -189,4 +189,8 @@ def kg_presupuesto_packing_extract(access_token):
         logger.error(f"❌ No se encontró el archivo de KG Presupuesto:")
         return False
     
-    return pd.read_excel(url_excel,skiprows=1)
+    df = pd.read_excel(url_excel,skiprows=1)
+    
+    
+    
+    return df

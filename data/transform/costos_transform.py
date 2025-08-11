@@ -328,4 +328,50 @@ def kg_presupuesto_packing_transform(access_token):
         "KG EXPORTADOS - PPTO" :"KG PPTO EXPORTADOS"
         }
     )
-    return df
+    expanded_rows = []
+    
+    # Identificar columnas que contienen valores de kilos (probablemente las que no son AÑO, MES, SEMANA)
+    kg_columns = [col for col in df.columns if col not in ['AÑO', 'MES', 'SEMANA']]
+    
+    for _, row in df.iterrows():
+        year = int(row['AÑO'])
+        month = int(row['MES'])
+        week = int(row['SEMANA'])
+        
+        # Calcular el primer día de la semana usando ISO week
+        
+        # Usar la semana ISO: encontrar el lunes de la semana especificada
+        # La semana 1 de ISO es la primera semana que contiene un jueves
+        jan_1 = datetime(year, 1, 1)
+        
+        # Encontrar el primer jueves del año
+        days_to_thursday = (3 - jan_1.weekday()) % 7  # 3 = jueves
+        first_thursday = jan_1 + timedelta(days=days_to_thursday)
+        
+        # El lunes de la primera semana ISO
+        first_monday = first_thursday - timedelta(days=3)
+        
+        # Calcular el lunes de la semana específica
+        week_start = first_monday + timedelta(weeks=week-1)
+        
+        # Crear 7 filas para cada día de la semana
+        for day_offset in range(7):
+            current_date = week_start + timedelta(days=day_offset)
+            new_row = row.copy()
+            new_row['Fecha'] = current_date.strftime('%Y-%m-%d')
+            
+            # Solo el último día (domingo) mantiene los valores originales
+            if day_offset == 6:  # 6 = domingo (último día de la semana)
+                # Mantener valores originales de kilos
+                pass
+            else:
+                # Los demás días tienen 0 en las columnas de kilos
+                for kg_col in kg_columns:
+                    if kg_col in new_row:
+                        new_row[kg_col] = 0
+            
+            expanded_rows.append(new_row)
+    
+    # Crear el nuevo DataFrame expandido
+    expanded_df = pd.DataFrame(expanded_rows)
+    return expanded_df
