@@ -58,6 +58,8 @@ def recepcion_tiempos_packing_transform():
 def enfriamiento_tiempos_packing_transform():
     df = enfriamiento_extract()
     df['FECHA'] = pd.to_datetime(df['FECHA'], dayfirst=True).dt.strftime('%Y-%m-%d')
+    df["HORA INICIAL"] = df["HORA INICIAL"].fillna("-").astype(str)
+    df["HORA FINAL"] = df["HORA FINAL"].fillna("-").astype(str)
     df = df.groupby(["FECHA","HORA INICIAL","QR","HORA FINAL"])[["FORMATO"]].count().reset_index()
     df = df[df["FECHA"] >= "2025-07-10"]
     df = df.rename(columns={
@@ -66,8 +68,8 @@ def enfriamiento_tiempos_packing_transform():
             "HORA INICIAL": "HORA INICIAL ENFRIAMIENTO"
     })
     df = df.drop(columns=["FORMATO"])
-    df["HORA INICIAL ENFRIAMIENTO"] = pd.to_datetime(df["HORA INICIAL ENFRIAMIENTO"], format='%H:%M', errors='coerce').dt.strftime('%H:%M:%S')
-    df["HORA FINAL ENFRIAMIENTO"] = pd.to_datetime(df["HORA FINAL ENFRIAMIENTO"], format='%H:%M', errors='coerce').dt.strftime('%H:%M:%S')
+    #df["HORA INICIAL ENFRIAMIENTO"] = pd.to_datetime(df["HORA INICIAL ENFRIAMIENTO"], format='%H:%M', errors='coerce').dt.strftime('%H:%M:%S')
+    #df["HORA FINAL ENFRIAMIENTO"] = pd.to_datetime(df["HORA FINAL ENFRIAMIENTO"], format='%H:%M', errors='coerce').dt.strftime('%H:%M:%S')
     logger.info(f"✅ Datos de Recepcion Enfriamiento: {len(df)} filas")
     return df
 

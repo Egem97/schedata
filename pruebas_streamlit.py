@@ -23,17 +23,7 @@ st.title("Pruebas Streamlit")
 access_token = get_access_token()
 
 
-df = presupuesto_packing_transform(access_token=access_token)
+df = tiempos_packing_data_transform()
+
 st.dataframe(df)
-
-
-
-#df = registro_phl_pt_formatos_transform(access_token=access_token)
-#dff = df[df["AGRUPADOR REPORTE DE PRODUCCION"].isnull()]
-#print(dff["DESCRIPCION DEL PRODUCTO"].unique())#
-#st.write(dff["DESCRIPCION DEL PRODUCTO"].unique())
-#st.dataframe(df)
-#st.dataframe(pd.read_parquet(r"./src/storage/AGRUPADOR RP.parquet"))
-
-
 
