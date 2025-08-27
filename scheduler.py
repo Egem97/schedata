@@ -13,7 +13,7 @@ from utils.transform_data import recepcion_clean_data, tiempos_transform_packing
 from data.transform.packing_transform import tiempos_packing_data_transform
 from utils.helpers import get_download_url_by_name
 from tasks.flujo_packing import ejecutar_proceso_principal,ejecutar_proceso_costos,ejecutar_proceso_bm_packing,ejecutar_proceso_images_fcl
-from tasks.update_tipo_cambio import ejecutar_proceso_update_tipo_cambio,ejecutar_proceso_images_fcl
+from tasks.update_tipo_cambio import ejecutar_proceso_update_tipo_cambio
 
 
 # Configurar logging
