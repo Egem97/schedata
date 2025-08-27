@@ -435,7 +435,37 @@ def registro_phl_pt_formatos_transform(access_token):
 
 def images_fcl_drive_extract_transform(access_token):
     df = images_fcl_drive_extract(access_token)
-    print(df)
+    df["folder_name"] = df["folder_name"].str.strip()
+    df["folder_name"] = df["folder_name"].replace(" ","")
+    df = df[["folder_name","base64_complete"]]
+    df = df.drop_duplicates()
+    #df = df.groupby(["folder_name"]).agg({
+   #         "cantidad_images": "sum",
+   #         "base64_complete": lambda x: x.tolist(),
+   # }).reset_index()
+    dff = extract_all_data()
+    dff = dff.rename(columns={"image_base64":"base64_complete"})
+    dff["folder_name"] = dff["folder_name"].str.strip()
+    dff["folder_name"] = dff["folder_name"].replace(" ","")
+
+    df = pd.concat([df,dff],ignore_index=True)
+    df = df.drop_duplicates()
+    df = df.groupby(["folder_name"]).agg({
+            "base64_complete": lambda x: x.tolist(),
+    }).reset_index()
+    #folder_name,image_base64
+    df['base64_complete'] = df['base64_complete'].apply(lambda x: list(set(x)))
+    
+
+    
+    return df
+    
+
+    """
+    
+    def images_fcl_drive_extract_transform(access_token):
+    df = images_fcl_drive_extract(access_token)
+    
     df["folder_name"] = df["folder_name"].str.strip()
     df = df.groupby(["folder_name"]).agg({
             "cantidad_images": "sum",
@@ -449,6 +479,7 @@ def images_fcl_drive_extract_transform(access_token):
             "cantidad_images": "sum",
             "base64_complete": lambda x: sum((i for i in x if i is not None), []),
     }).reset_index()
+    #dff.to_excel("images_fcl_extraido.xlsx",index=False)
     dff = pd.concat([df,dff],ignore_index=True)
     #dff = dff.drop_duplicates()
     dff = dff.groupby(["folder_name"]).agg({
@@ -456,7 +487,7 @@ def images_fcl_drive_extract_transform(access_token):
             "base64_complete": lambda x: sum((i for i in x if i is not None), []),
     }).reset_index()
     def normalize_and_remove_duplicates(x):
-        """Normalizar a lista pura de Python y remover duplicados"""
+    
         try:
             # Convertir a lista pura de Python
             if isinstance(x, list):
@@ -466,13 +497,27 @@ def images_fcl_drive_extract_transform(access_token):
             else:
                 x_list = []
             
-            # Asegurar que todos los elementos sean strings
-            x_list = [str(item) for item in x_list if item is not None]
+            # Aplanar listas anidadas y extraer solo los valores base64
+            flattened_list = []
+            for item in x_list:
+                if isinstance(item, list):
+                    # Si es una lista, extraer los valores base64
+                    for sub_item in item:
+                        if isinstance(sub_item, dict) and 'base64' in sub_item:
+                            flattened_list.append(sub_item['base64'])
+                        elif isinstance(sub_item, str) and sub_item.startswith('data:image'):
+                            flattened_list.append(sub_item)
+                elif isinstance(item, dict) and 'base64' in item:
+                    # Si es un diccionario con base64
+                    flattened_list.append(item['base64'])
+                elif isinstance(item, str) and item.startswith('data:image'):
+                    # Si ya es un string base64
+                    flattened_list.append(item)
             
             # Remover duplicados manteniendo el orden
             seen = set()
             unique_list = []
-            for item in x_list:
+            for item in flattened_list:
                 if item not in seen:
                     seen.add(item)
                     unique_list.append(item)
@@ -482,12 +527,22 @@ def images_fcl_drive_extract_transform(access_token):
             logger.warning(f"⚠️ Error al normalizar datos: {e}")
             return []
     
+    # Debug: Ver qué hay antes de normalizar
+    logger.info("🔍 Debug: Muestra de datos antes de normalizar:")
+    for i, row in dff.head(3).iterrows():
+        logger.info(f"  Row {i}: {type(row['base64_complete'])} - {row['base64_complete'][:100] if isinstance(row['base64_complete'], list) else str(row['base64_complete'])[:100]}")
+    
     # Aplicar normalización a toda la columna
     dff["base64_complete"] = dff["base64_complete"].apply(normalize_and_remove_duplicates)
     
     # Verificar que todos los elementos sean listas
     logger.info(f"✅ Datos normalizados: {len(dff)} registros")
     logger.info(f"📊 Tipos de datos en base64_complete: {dff['base64_complete'].apply(type).value_counts()}")
+    
+    # Debug: Ver qué hay después de normalizar
+    logger.info("🔍 Debug: Muestra de datos después de normalizar:")
+    for i, row in dff.head(3).iterrows():
+        logger.info(f"  Row {i}: {type(row['base64_complete'])} - {row['base64_complete'][:100] if isinstance(row['base64_complete'], list) else str(row['base64_complete'])[:100]}")
     
     # Verificación final para compatibilidad con Streamlit
     try:
@@ -504,3 +559,4 @@ def images_fcl_drive_extract_transform(access_token):
     del df
     return dff
     
+    """

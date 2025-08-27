@@ -35,20 +35,13 @@ df = df.groupby(["folder_name"]).agg({
 #from data.load.packing_load import save_images_fcl_drive_load_data
 #save_images_fcl_drive_load_data(access_token)
 
-
+#from utils.get_sheets import extract_all_data
+#df = extract_all_data()
+#st.dataframe(df)
+#df = images_fcl_drive_extract_transform(access_token)
+#df.to_excel("images_fcl.xlsx",index=False)
+#st.dataframe(df)
 #df = images_fcl_drive_extract_transform(access_token)
 #st.dataframe(df)
 
 
-
-#
-
-
-"""
-
-SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-SERVICE_ACCOUNT_FILE = 'nifty-might-269005-cd303aaaa33f.json'
-FOLDER_ID = '1OqY3VnNgsbnKRuqVZqFi6QSXqKDC4uox'
-
-
-"""

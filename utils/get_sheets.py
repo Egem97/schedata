@@ -57,8 +57,9 @@ def list_folders(service, folder_id):
     
     
    
-    dff = dff[dff["modifiedTime"] > f"{str(fecha_actual)}"]
-    
+    dff = dff[dff["modifiedTime"] > f"{str(fecha_actual)}"]#{str(fecha_actual)}
+    #dff = dff.head(5)
+    #dff = dff.head(4)
     files_ = dff.to_dict(orient="records")
     del dff
     return files_
@@ -244,22 +245,22 @@ def extract_all_data():
         
         if not images:
             print(f"   ⚠️  No se encontraron imágenes en '{folder['name']}'")
-            # Agregar carpeta sin imágenes
+            # Agregar carpeta sin imágenes como una fila
             all_data.append({
-                'id': folder['id'],
-                'name': folder['name'],
-                'webViewLink': folder['webViewLink'],
-                'cantidad_images': 0,
-                'lista_images': []
+                'folder_id': folder['id'],
+                'folder_name': folder['name'],
+                'folder_webViewLink': folder['webViewLink'],
+                'image_id': None,
+                'image_name': None,
+                'image_webViewLink': None,
+                'image_base64': None,
+                'image_size_mb': 0
             })
             continue
         
         print(f"   ✅ Se encontraron {len(images)} imágenes")
         
-        # Lista para almacenar datos de imágenes
-        image_list = []
-        
-        # Procesar cada imagen
+        # Procesar cada imagen como una fila separada
         for j, image in enumerate(images, 1):
             original_size_mb = int(image.get('size', 0)) / (1024 * 1024)
             print(f"      🖼️  Procesando imagen {j}/{len(images)}: {image['name']} ({original_size_mb:.2f}MB)")
@@ -268,6 +269,17 @@ def extract_all_data():
             image_data = download_image(service, image['id'])
             if not image_data:
                 print(f"         ❌ Error al descargar {image['name']}")
+                # Agregar fila con error
+                all_data.append({
+                    'folder_id': folder['id'],
+                    'folder_name': folder['name'],
+                    'folder_webViewLink': folder['webViewLink'],
+                    'image_id': image['id'],
+                    'image_name': image['name'],
+                    'image_webViewLink': image.get('webViewLink'),
+                    'image_base64': None,
+                    'image_size_mb': original_size_mb
+                })
                 continue
             
             # Convertir a base64
@@ -277,21 +289,33 @@ def extract_all_data():
                 optimized_size_mb = len(base64_image) * 0.75 / (1024 * 1024)
                 reduction_percent = (1 - optimized_size_mb / original_size_mb) * 100 if original_size_mb > 0 else 0
                 
-                image_list.append(base64_image)
+                # Agregar fila con imagen procesada
+                all_data.append({
+                    'folder_id': folder['id'],
+                    'folder_name': folder['name'],
+                    'folder_webViewLink': folder['webViewLink'],
+                    'image_id': image['id'],
+                    'image_name': image['name'],
+                    'image_webViewLink': image.get('webViewLink'),
+                    'image_base64': base64_image,
+                    'image_size_mb': optimized_size_mb
+                })
                 print(f"         ✅ Imagen optimizada: {image['name']} ({reduction_percent:.1f}% reducción)")
             else:
                 print(f"         ❌ Error al procesar {image['name']}")
+                # Agregar fila con error
+                all_data.append({
+                    'folder_id': folder['id'],
+                    'folder_name': folder['name'],
+                    'folder_webViewLink': folder['webViewLink'],
+                    'image_id': image['id'],
+                    'image_name': image['name'],
+                    'image_webViewLink': image.get('webViewLink'),
+                    'image_base64': None,
+                    'image_size_mb': original_size_mb
+                })
         
-        # Agregar datos de la carpeta
-        all_data.append({
-            'id': folder['id'],
-            'name': folder['name'],
-            'webViewLink': folder['webViewLink'],
-            'cantidad_images': len(image_list),
-            'lista_images': image_list
-        })
-        
-        print(f"   ✅ Carpeta '{folder['name']}' completada: {len(image_list)} imágenes procesadas")
+        print(f"   ✅ Carpeta '{folder['name']}' completada: {len(images)} imágenes procesadas")
     
-    print(f"\n✅ Extracción completada: {len(all_data)} carpetas procesadas")
+    print(f"\n✅ Extracción completada: {len(all_data)} filas procesadas")
     return pd.DataFrame(all_data)
