@@ -47,6 +47,7 @@ def ejecutar_proceso_costos():
         mayor_analitico_opex_load_data(access_token,inicio)#MAYOR ANALITICO OPEX
         horas_trabajadores_packing_load_data(access_token,inicio)#HORAS TRABAJADORES
         registro_phl_pt_formatos_load_data(access_token,inicio)#PHL PT
+        
     except Exception as e:
         logger.error(f"❌ Error en el proceso costos: {str(e)}")
         return False
@@ -61,6 +62,21 @@ def ejecutar_proceso_bm_packing():
         inicio = datetime.now()
         logger.info("🚀 Iniciando proceso automatizado...")
         balance_masa_load_data(access_token,inicio)
+        
+    except Exception as e:
+        logger.error(f"❌ Error en el proceso principal: {str(e)}")
+        return False
+
+def ejecutar_proceso_images_fcl():
+    """
+    Función TIEMPOS PACKING
+    """
+    logger = logging.getLogger(__name__)
+    access_token = get_access_token()
+    try:
+        inicio = datetime.now()
+        logger.info("🚀 Iniciando proceso automatizado IMAGES FCL...")
+        save_images_fcl_drive_load_data(access_token,inicio)
         
     except Exception as e:
         logger.error(f"❌ Error en el proceso principal: {str(e)}")

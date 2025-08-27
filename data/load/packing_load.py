@@ -92,3 +92,26 @@ def registro_phl_pt_formatos_load_data(access_token,tiempo_inicio):
     else:
         logger.error(f"❌ Error al subir el archivo")
         return False
+    
+
+def save_images_fcl_drive_load_data(access_token,tiempo_inicio):
+    df = images_fcl_drive_extract_transform(access_token)
+    logger.info(f"📤 Subiendo archivo Images Evaluacion Calidad...")
+    resultado = subir_archivo_con_reintento(
+        access_token=access_token,
+        dataframe=df,
+        nombre_archivo="Calidad_Images_FCL.parquet",
+        drive_id="b!M5ucw3aa_UqBAcqv3a6affR7vTZM2a5ApFygaKCcATxyLdOhkHDiRKl9EvzaYbuR",
+        folder_id="01XOBWFSBLVGULAQNEKNG2WR7CPRACEN7Q",
+        type_file="parquet"
+    )
+    fin = datetime.now()
+    if resultado:
+        logger.info(f"✅ Proceso completado exitosamente")
+        logger.info(f"📁 Archivo subido: Calidad_Images_FCL.parquet")
+        
+        logger.info(f"⏱️ Tiempo total de ejecución: {fin-tiempo_inicio}")
+        return True
+    else:
+        logger.error(f"❌ Error al subir el archivo")
+        return False

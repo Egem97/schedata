@@ -53,7 +53,7 @@ def subir_archivo(access_token: str, dataframe: pd.DataFrame, nombre_archivo: st
         bool: True si se subió exitosamente, False si hubo error
     """
     try:
-        print(f"📊 Aplicando formato especial al archivo Excel...")
+        
         
         # Usar la función de formato especial para crear el Excel en memoria
         

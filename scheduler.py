@@ -12,8 +12,8 @@ from utils.get_api import listar_archivos_en_carpeta_compartida, subir_archivo_c
 from utils.transform_data import recepcion_clean_data, tiempos_transform_packing_data
 from data.transform.packing_transform import tiempos_packing_data_transform
 from utils.helpers import get_download_url_by_name
-from tasks.flujo_packing import ejecutar_proceso_principal,ejecutar_proceso_costos,ejecutar_proceso_bm_packing
-from tasks.update_tipo_cambio import ejecutar_proceso_update_tipo_cambio
+from tasks.flujo_packing import ejecutar_proceso_principal,ejecutar_proceso_costos,ejecutar_proceso_bm_packing,ejecutar_proceso_images_fcl
+from tasks.update_tipo_cambio import ejecutar_proceso_update_tipo_cambio,ejecutar_proceso_images_fcl
 
 
 # Configurar logging
@@ -91,7 +91,7 @@ def configurar_scheduler():
         
         schedule.every(23).minutes.do(ejecutar_proceso_bm_packing)
         logger.info(f"⏰ Programado proceso BM packing cada 23 minutos")
-        
+        schedule.every(15).minutes.do(ejecutar_proceso_images_fcl)
     except Exception as e:
         logger.error(f"Error al configurar scheduler: {str(e)}")
         return False
@@ -166,6 +166,7 @@ def main():
             ejecutar_proceso_principal()
             ejecutar_proceso_costos()
             ejecutar_proceso_bm_packing()
+            ejecutar_proceso_images_fcl()
             logger.info("✅ Procesos iniciales completados")
         except Exception as e:
             logger.error(f"❌ Error en procesos iniciales: {str(e)}")

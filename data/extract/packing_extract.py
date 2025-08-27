@@ -87,3 +87,33 @@ def agrupador_rp_extract():
     
     return pd.read_excel("./src/storage/AGRUPADOR RP.xlsx",sheet_name="AGRUPADOR RP"),pd.read_excel("./src/storage/AGRUPADOR RP.xlsx",sheet_name="AGRUPADOR DE CAJAS")
 
+def images_fcl_drive_extract(access_token):
+    
+    logger.info(f"📁 Obteniendo datos de images fcl drive: ")
+    data = listar_archivos_en_carpeta_compartida(
+        access_token,
+        "b!M5ucw3aa_UqBAcqv3a6affR7vTZM2a5ApFygaKCcATxyLdOhkHDiRKl9EvzaYbuR",
+        "01XOBWFSBLVGULAQNEKNG2WR7CPRACEN7Q"
+    )
+    url_parquet = get_download_url_by_name(data, "Calidad_Images_FCL.parquet")
+    if not url_parquet:
+        logger.error(f"❌ No se encontró el archivo de images fcl drive:")
+        return False
+    
+    return pd.read_parquet(url_parquet)
+
+def test_images_fcl_drive_extract(access_token):
+    
+    logger.info(f"📁 Obteniendo datos de images fcl drive: ")
+    data = listar_archivos_en_carpeta_compartida(
+        access_token,
+        "b!M5ucw3aa_UqBAcqv3a6affR7vTZM2a5ApFygaKCcATxyLdOhkHDiRKl9EvzaYbuR",
+        "01XOBWFSBLVGULAQNEKNG2WR7CPRACEN7Q"
+    )
+    url_parquet = get_download_url_by_name(data, "Calidad_Images_FCL.parquet")
+    if not url_parquet:
+        logger.error(f"❌ No se encontró el archivo de images fcl drive:")
+        return False
+    
+    return pd.read_parquet(url_parquet)
+

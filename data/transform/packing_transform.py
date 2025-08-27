@@ -1,8 +1,13 @@
 import pandas as pd
 import logging
+import base64
+import io
 from data.extract.packing_extract import *
 from utils.helpers import corregir_hora_tarde, convert_mixed_dates,transform_kg_text_rp_packing
 from utils.suppress_warnings import setup_pandas_warnings
+from datetime import datetime
+from utils.get_sheets import *
+from PIL import Image
 
 setup_pandas_warnings()
 
@@ -104,7 +109,7 @@ def tiempos_packing_data_transform():
     
     logger.info(f"✅ Datos procesados: {len(df)} filas")
     
-    return df
+    return df 
 
 
 
@@ -297,7 +302,10 @@ def joins_pt_transform():
     })
     agrupador = pd.concat([agrupador,nueva_fila_agrupador],ignore_index=True)
     agrupadorcajas = pd.read_parquet(r"./src/storage/AGRUPADOR CAJAS.parquet")
-    volcado_dff = volcado_bm_descarte_transform()
+    volcado_dff = volcado_bm_descarte_transform()(pt_transform,LISTA_AGRUPADOR)
+    pt_cajas_agrupador_kg_df =pivot_cajas_agrupador_kg_transform(pt_transform,LISTA_AGRUPADOR)
+    kg_exportables_df = kg_exportables_transform(pt_transform)
+   
     LISTA_PRESENTACIONES = list(agrupadorcajas["PRESENTACIONES"].unique())
     LISTA_AGRUPADOR = list(agrupadorcajas["AGRUPADOR"].unique())
 
@@ -305,10 +313,7 @@ def joins_pt_transform():
     
     
     pt_cajas_presentacion_df = pivot_cajas_presentacion_pt_transform(pt_transform,LISTA_PRESENTACIONES)
-    pt_cajas_agrupador_df =pivot_cajas_agrupador_pt_transform(pt_transform,LISTA_AGRUPADOR)
-    pt_cajas_agrupador_kg_df =pivot_cajas_agrupador_kg_transform(pt_transform,LISTA_AGRUPADOR)
-    kg_exportables_df = kg_exportables_transform(pt_transform)
-   
+    pt_cajas_agrupador_df =pivot_cajas_agrupador_pt_transform
     list_presentacion = list(pt_cajas_presentacion_df.columns[7:])
     lista_agrupadores_ = list(pt_transform["AGRUPADOR"].unique())
     list_agrupador = list(pt_cajas_agrupador_df.columns[7:])
@@ -425,3 +430,77 @@ def registro_phl_pt_formatos_transform(access_token):
     #df = df.rename(columns={"AGRUPADOR CAJAS":"AGRUPADOR"})
     
     return df
+
+
+
+def images_fcl_drive_extract_transform(access_token):
+    df = images_fcl_drive_extract(access_token)
+    print(df)
+    df["folder_name"] = df["folder_name"].str.strip()
+    df = df.groupby(["folder_name"]).agg({
+            "cantidad_images": "sum",
+            "base64_complete": lambda x: x.tolist(),
+    }).reset_index()
+    dff = extract_all_data()
+    dff = dff.rename(columns={"name":"folder_name","lista_images":"base64_complete"})
+    
+    dff = dff.drop(columns=["webViewLink","id"])
+    dff = dff.groupby(["folder_name"]).agg({
+            "cantidad_images": "sum",
+            "base64_complete": lambda x: sum((i for i in x if i is not None), []),
+    }).reset_index()
+    dff = pd.concat([df,dff],ignore_index=True)
+    #dff = dff.drop_duplicates()
+    dff = dff.groupby(["folder_name"]).agg({
+            "cantidad_images": "sum",
+            "base64_complete": lambda x: sum((i for i in x if i is not None), []),
+    }).reset_index()
+    def normalize_and_remove_duplicates(x):
+        """Normalizar a lista pura de Python y remover duplicados"""
+        try:
+            # Convertir a lista pura de Python
+            if isinstance(x, list):
+                x_list = x
+            elif hasattr(x, 'tolist'):  # Para arrays de NumPy
+                x_list = x.tolist()
+            else:
+                x_list = []
+            
+            # Asegurar que todos los elementos sean strings
+            x_list = [str(item) for item in x_list if item is not None]
+            
+            # Remover duplicados manteniendo el orden
+            seen = set()
+            unique_list = []
+            for item in x_list:
+                if item not in seen:
+                    seen.add(item)
+                    unique_list.append(item)
+            
+            return unique_list
+        except Exception as e:
+            logger.warning(f"⚠️ Error al normalizar datos: {e}")
+            return []
+    
+    # Aplicar normalización a toda la columna
+    dff["base64_complete"] = dff["base64_complete"].apply(normalize_and_remove_duplicates)
+    
+    # Verificar que todos los elementos sean listas
+    logger.info(f"✅ Datos normalizados: {len(dff)} registros")
+    logger.info(f"📊 Tipos de datos en base64_complete: {dff['base64_complete'].apply(type).value_counts()}")
+    
+    # Verificación final para compatibilidad con Streamlit
+    try:
+        # Forzar conversión a tipos compatibles
+        dff = dff.astype({
+            'folder_name': 'string',
+            'cantidad_images': 'int64',
+            'base64_complete': 'object'  # Mantener como object para listas
+        })
+        logger.info("✅ DataFrame convertido a tipos compatibles")
+    except Exception as e:
+        logger.warning(f"⚠️ Error en conversión de tipos: {e}")
+    
+    del df
+    return dff
+    
