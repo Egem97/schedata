@@ -95,7 +95,7 @@ def images_fcl_drive_extract(access_token):
         "b!M5ucw3aa_UqBAcqv3a6affR7vTZM2a5ApFygaKCcATxyLdOhkHDiRKl9EvzaYbuR",
         "01XOBWFSBLVGULAQNEKNG2WR7CPRACEN7Q"
     )
-    url_parquet = get_download_url_by_name(data, "base64_images_pt.parquet")
+    url_parquet = get_download_url_by_name(data, "Calidad_Images_FCL.parquet")
     if not url_parquet:
         logger.error(f"❌ No se encontró el archivo de images fcl drive:")
         return False
