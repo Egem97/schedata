@@ -32,8 +32,8 @@ df = df.groupby(["folder_name"]).agg({
         "base64_complete": lambda x: x.tolist(),
 }).reset_index()
 """
-#from data.load.packing_load import save_images_fcl_drive_load_data
-#save_images_fcl_drive_load_data(access_token)
+from data.load.packing_load import save_images_fcl_drive_load_data
+save_images_fcl_drive_load_data(access_token)
 
 #from utils.get_sheets import extract_all_data
 #df = extract_all_data()
