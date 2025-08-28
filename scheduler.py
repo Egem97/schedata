@@ -91,7 +91,7 @@ def configurar_scheduler():
         
         schedule.every(23).minutes.do(ejecutar_proceso_bm_packing)
         logger.info(f"⏰ Programado proceso BM packing cada 23 minutos")
-        schedule.every(15).minutes.do(ejecutar_proceso_images_fcl)
+        schedule.every(15).minutes.do(ejecutar_proceso_images_fcl)  
     except Exception as e:
         logger.error(f"Error al configurar scheduler: {str(e)}")
         return False

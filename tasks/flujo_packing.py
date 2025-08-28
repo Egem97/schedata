@@ -68,9 +68,7 @@ def ejecutar_proceso_bm_packing():
         return False
 
 def ejecutar_proceso_images_fcl():
-    """
-    Función TIEMPOS PACKING
-    """
+   
     logger = logging.getLogger(__name__)
     access_token = get_access_token()
     try:
