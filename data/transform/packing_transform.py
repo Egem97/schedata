@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import logging
 import base64
 import io
@@ -436,9 +437,11 @@ def registro_phl_pt_formatos_transform(access_token):
 def images_fcl_drive_extract_transform(access_token):
     df = images_fcl_drive_extract(access_token)
     df["folder_name"] = df["folder_name"].str.strip()
-    df["folder_name"] = df["folder_name"].replace(" ","")
+    #df["folder_name"] = df["folder_name"].replace(" ","")
     df = df[["folder_name","base64_complete"]]
-    df = df.drop_duplicates()
+    df = df.drop_duplicates(subset='base64_complete')
+    
+    
     #df = df.groupby(["folder_name"]).agg({
    #         "cantidad_images": "sum",
    #         "base64_complete": lambda x: x.tolist(),
@@ -446,15 +449,16 @@ def images_fcl_drive_extract_transform(access_token):
     dff = extract_all_data()
     dff = dff.rename(columns={"image_base64":"base64_complete"})
     dff["folder_name"] = dff["folder_name"].str.strip()
-    dff["folder_name"] = dff["folder_name"].replace(" ","")
-
-    df = pd.concat([df,dff],ignore_index=True)
-    df = df.drop_duplicates()
-    df = df.groupby(["folder_name"]).agg({
+    dff = dff.drop_duplicates()
+    dff = dff.groupby(["folder_name"]).agg({
             "base64_complete": lambda x: x.tolist(),
     }).reset_index()
-    #folder_name,image_base64
-    df['base64_complete'] = df['base64_complete'].apply(lambda x: list(set(x)))
+    
+    #dff["folder_name"] = dff["folder_name"].replace(" ","")
+
+    df = pd.concat([df,dff],ignore_index=True)
+
+    df['base64_complete'] = df['base64_complete'].apply(lambda x: list(dict.fromkeys(x)))
     
 
     
