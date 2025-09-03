@@ -54,8 +54,20 @@ def producto_terminado_extract():
     df.to_excel("producto_terminado2.xlsx", index=False)
     return df
 
-def reporte_produccion_extract():
+def reporte_produccion_extract(access_token):
+    logger.info(f"📁 Obteniendo datos de images fcl drive: ")
+    data = listar_archivos_en_carpeta_compartida(
+        access_token,
+        "b!8PNDXtlxLkaPga8GOB87BU1-H5NesxJIgOJah3G83Hm5hbrxL1sgT7Xj5bnL_Hi9",
+        "01S3ZMVBN4SH4IF5FDI5GIGOXDH2MPZCJN"
+    )
+    url_excel = get_download_url_by_name(data, "REPORTE DE PRODUCCION APP.xlsx")
+    if not url_excel:
+        logger.error(f"❌ No se encontró el archivo de images fcl drive:")
+        return False
     
+    return pd.read_excel(url_excel,sheet_name="RP ")
+"""
     logger.info(f"📁 Obteniendo datos de Reporte de Produccion: ")
     data = read_sheet("1OCBDYRmboSgcQIH0zJQqbAnwTB8f9zSIOaUWBWUXaUM", "RP")
     df = pd.DataFrame(data[1:], columns=data[0])
@@ -63,8 +75,8 @@ def reporte_produccion_extract():
     "Semana","Fecha de cosecha","Fecha de proceso","Turno Proceso","Empresa","Tipo","Fundo","Variedad","Kg Procesados","Kg Descarte",
     "% Descarte","Kg Sobre Peso","% Sobre Peso","Kg Merma","% Merma","% Rendimiento MP","Kg Exportables","%. Kg Exportables","TOTAL CAJAS EXPORTADAS"
     ]]
-    
-    return df
+"""
+
 
 
 def registro_phl_pt_extract(access_token):
@@ -72,10 +84,10 @@ def registro_phl_pt_extract(access_token):
     logger.info(f"📁 Obteniendo datos de PHL PT: ")
     data = listar_archivos_en_carpeta_compartida(
         access_token,
-        DRIVE_ID_CARPETA_STORAGE,
-        FOLDER_ID_CARPETA_STORAGE
+        "b!Mx2p-6knhUeohEjU-L-a3w-JZv1JawxAkEY9khgxn7hWjhq65fg_To08YnAwHSc0",
+        "01L5M4SATOWDS7G66DCNCYJLOJVNY7SPTV"
     )
-    url_excel = get_download_url_by_name(data, "REGISTRO DE PHL - PRODUCTO TERMINADO.xlsm")
+    url_excel = get_download_url_by_name(data, "REGISTRO DE PHL - PRODUCTO TERMINADO -154.xlsm")
     if not url_excel:
         logger.error(f"❌ No se encontró el archivo de PHL PT:")
         return False

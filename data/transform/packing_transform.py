@@ -9,6 +9,7 @@ from utils.suppress_warnings import setup_pandas_warnings
 from datetime import datetime
 from utils.get_sheets import *
 from PIL import Image
+from utils.handler_bd import clear_day_gcl_img
 
 setup_pandas_warnings()
 
@@ -26,6 +27,9 @@ def recepcion_tiempos_packing_transform():
     df["N° JARRAS"] = df["N° JARRAS"].str.replace(",", ".", regex=False).astype(float)
     df["PESO PROMEDIO JARRA"] = df["PESO PROMEDIO JARRA"].replace('',"0")
     df["PESO PROMEDIO JARRA"] = df["PESO PROMEDIO JARRA"].str.replace(",", ".", regex=False).astype(float)
+
+    
+    df["TEMPERATURA"] = df["TEMPERATURA"].replace('','0')
     df["TEMPERATURA"] = df["TEMPERATURA"].str.replace(",", ".", regex=False).astype(float)
     df["PESO PROMEDIO JABA"] = df["PESO PROMEDIO JABA"].replace('',"0")
     df["PESO PROMEDIO JABA"] = df["PESO PROMEDIO JABA"].str.replace(",", ".", regex=False).astype(float)
@@ -360,18 +364,18 @@ def joins_pt_transform():
 
 
 
-def reporte_produccion_transform():
-    df = reporte_produccion_extract()
-    df["Kg Procesados"] = df["Kg Procesados"].apply(transform_kg_text_rp_packing)
+def reporte_produccion_transform(access_token):
+    df = reporte_produccion_extract(access_token)
+    #df["Kg Procesados"] = df["Kg Procesados"].apply(transform_kg_text_rp_packing)
     df["Kg Procesados"] = df["Kg Procesados"].astype(float)
-    df["%. Kg Exportables"] = df["%. Kg Exportables"].str.replace(",", ".", regex=False).astype(float)
+    df["%. Kg Exportables"] = df["%. Kg Exportables"].astype(float)
     
     df["Kg Exportables"] = df["Kg Procesados"].astype(float) * (df["%. Kg Exportables"].astype(float)/100)
     df["TOTAL CAJAS EXPORTADAS"] = df["TOTAL CAJAS EXPORTADAS"].astype(int)
     
     # Convertir columnas numéricas
-    for col in ["Kg Descarte","% Descarte","Kg Sobre Peso","% Sobre Peso","Kg Merma","% Merma","% Rendimiento MP",]:
-        df[col] = df[col].str.replace(",", ".", regex=False).astype(float)
+    #for col in ["Kg Descarte","% Descarte","Kg Sobre Peso","% Sobre Peso","Kg Merma","% Merma","% Rendimiento MP",]:
+    #    df[col] = df[col].astype(float)
     
     #
     df["Fecha de cosecha"] = pd.to_datetime(df["Fecha de cosecha"],dayfirst=True).dt.strftime('%Y-%m-%d')
@@ -379,9 +383,9 @@ def reporte_produccion_transform():
 
 
     return df
-
-def reporte_produccion_costos_transform():
-    df = reporte_produccion_transform()
+##### REPORTE DE PRODUCCION
+def reporte_produccion_costos_transform(access_token):
+    df = reporte_produccion_transform(access_token)
     df = df.rename(columns={
             "Semana":"SEMANA","Fecha de proceso":"FECHA", 'Variedad':"VARIEDAD",'Fundo':"FUNDO",'Empresa':"EMPRESA",
             "Kg Exportables":"KG_EXPORTABLES","Kg Descarte":"KG_DESCARTE","Kg Procesados":"KG_PROCESADOS"
@@ -433,134 +437,12 @@ def registro_phl_pt_formatos_transform(access_token):
     return df
 
 
-
-def images_fcl_drive_extract_transform(access_token):
-    df = images_fcl_drive_extract(access_token)
-    df["folder_name"] = df["folder_name"].str.strip()
-    #df["folder_name"] = df["folder_name"].replace(" ","")
-    df = df[["folder_name","base64_complete"]]
-    df = df.drop_duplicates(subset='base64_complete')
-    
-    
-    #df = df.groupby(["folder_name"]).agg({
-   #         "cantidad_images": "sum",
-   #         "base64_complete": lambda x: x.tolist(),
-   # }).reset_index()
+def images_fcl_drive_extract_transform():
+    """Extraer datos de imágenes optimizados para Streamlit"""
     dff = extract_all_data()
-    dff = dff.rename(columns={"image_base64":"base64_complete"})
-    dff["folder_name"] = dff["folder_name"].str.strip()
-    dff = dff.drop_duplicates()
-    dff = dff.groupby(["folder_name"]).agg({
-            "base64_complete": lambda x: x.tolist(),
-    }).reset_index()
+    #clear_day_gcl_img()
     
-    #dff["folder_name"] = dff["folder_name"].replace(" ","")
-
-    df = pd.concat([df,dff],ignore_index=True)
-
-    df['base64_complete'] = df['base64_complete'].apply(lambda x: list(dict.fromkeys(x)))
-    
-
-    
-    return df
-    
-
-    """
-    
-    def images_fcl_drive_extract_transform(access_token):
-    df = images_fcl_drive_extract(access_token)
-    
-    df["folder_name"] = df["folder_name"].str.strip()
-    df = df.groupby(["folder_name"]).agg({
-            "cantidad_images": "sum",
-            "base64_complete": lambda x: x.tolist(),
-    }).reset_index()
-    dff = extract_all_data()
-    dff = dff.rename(columns={"name":"folder_name","lista_images":"base64_complete"})
-    
-    dff = dff.drop(columns=["webViewLink","id"])
-    dff = dff.groupby(["folder_name"]).agg({
-            "cantidad_images": "sum",
-            "base64_complete": lambda x: sum((i for i in x if i is not None), []),
-    }).reset_index()
-    #dff.to_excel("images_fcl_extraido.xlsx",index=False)
-    dff = pd.concat([df,dff],ignore_index=True)
-    #dff = dff.drop_duplicates()
-    dff = dff.groupby(["folder_name"]).agg({
-            "cantidad_images": "sum",
-            "base64_complete": lambda x: sum((i for i in x if i is not None), []),
-    }).reset_index()
-    def normalize_and_remove_duplicates(x):
-    
-        try:
-            # Convertir a lista pura de Python
-            if isinstance(x, list):
-                x_list = x
-            elif hasattr(x, 'tolist'):  # Para arrays de NumPy
-                x_list = x.tolist()
-            else:
-                x_list = []
-            
-            # Aplanar listas anidadas y extraer solo los valores base64
-            flattened_list = []
-            for item in x_list:
-                if isinstance(item, list):
-                    # Si es una lista, extraer los valores base64
-                    for sub_item in item:
-                        if isinstance(sub_item, dict) and 'base64' in sub_item:
-                            flattened_list.append(sub_item['base64'])
-                        elif isinstance(sub_item, str) and sub_item.startswith('data:image'):
-                            flattened_list.append(sub_item)
-                elif isinstance(item, dict) and 'base64' in item:
-                    # Si es un diccionario con base64
-                    flattened_list.append(item['base64'])
-                elif isinstance(item, str) and item.startswith('data:image'):
-                    # Si ya es un string base64
-                    flattened_list.append(item)
-            
-            # Remover duplicados manteniendo el orden
-            seen = set()
-            unique_list = []
-            for item in flattened_list:
-                if item not in seen:
-                    seen.add(item)
-                    unique_list.append(item)
-            
-            return unique_list
-        except Exception as e:
-            logger.warning(f"⚠️ Error al normalizar datos: {e}")
-            return []
-    
-    # Debug: Ver qué hay antes de normalizar
-    logger.info("🔍 Debug: Muestra de datos antes de normalizar:")
-    for i, row in dff.head(3).iterrows():
-        logger.info(f"  Row {i}: {type(row['base64_complete'])} - {row['base64_complete'][:100] if isinstance(row['base64_complete'], list) else str(row['base64_complete'])[:100]}")
-    
-    # Aplicar normalización a toda la columna
-    dff["base64_complete"] = dff["base64_complete"].apply(normalize_and_remove_duplicates)
-    
-    # Verificar que todos los elementos sean listas
-    logger.info(f"✅ Datos normalizados: {len(dff)} registros")
-    logger.info(f"📊 Tipos de datos en base64_complete: {dff['base64_complete'].apply(type).value_counts()}")
-    
-    # Debug: Ver qué hay después de normalizar
-    logger.info("🔍 Debug: Muestra de datos después de normalizar:")
-    for i, row in dff.head(3).iterrows():
-        logger.info(f"  Row {i}: {type(row['base64_complete'])} - {row['base64_complete'][:100] if isinstance(row['base64_complete'], list) else str(row['base64_complete'])[:100]}")
-    
-    # Verificación final para compatibilidad con Streamlit
-    try:
-        # Forzar conversión a tipos compatibles
-        dff = dff.astype({
-            'folder_name': 'string',
-            'cantidad_images': 'int64',
-            'base64_complete': 'object'  # Mantener como object para listas
-        })
-        logger.info("✅ DataFrame convertido a tipos compatibles")
-    except Exception as e:
-        logger.warning(f"⚠️ Error en conversión de tipos: {e}")
-    
-    del df
     return dff
     
-    """
+
+    

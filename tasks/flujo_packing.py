@@ -36,17 +36,19 @@ def ejecutar_proceso_costos():
     """
     logger = logging.getLogger(__name__)
     access_token = get_access_token()
+    access_token_packing = get_access_token_packing()
     try:
         inicio = datetime.now()
         logger.info("🚀 Iniciando proceso automatizado...")
-        reporte_produccion_load_data(access_token,inicio)#KG PT
+        reporte_produccion_load_data(access_token,access_token_packing,inicio)#KG PT
         ocupacion_transporte_packing_load_data(access_token,inicio)#OCUPACION TRANSPORTE
         kg_presupuesto_packing_load_data(access_token,inicio)#KG PPTO   
         mayor_analitico_packing_load_data(access_token,inicio)#MAYOR ANALITICO PACKING 
         presupuesto_packing_load_data(access_token,inicio)#PRESUPUESTO
         mayor_analitico_opex_load_data(access_token,inicio)#MAYOR ANALITICO OPEX
+
         horas_trabajadores_packing_load_data(access_token,inicio)#HORAS TRABAJADORES
-        registro_phl_pt_formatos_load_data(access_token,inicio)#PHL PT
+        registro_phl_pt_formatos_load_data(access_token_packing,inicio)#PHL PT
         
     except Exception as e:
         logger.error(f"❌ Error en el proceso costos: {str(e)}")
@@ -67,6 +69,7 @@ def ejecutar_proceso_bm_packing():
         logger.error(f"❌ Error en el proceso principal: {str(e)}")
         return False
 
+"""
 def ejecutar_proceso_images_fcl():
    
     logger = logging.getLogger(__name__)
@@ -79,3 +82,4 @@ def ejecutar_proceso_images_fcl():
     except Exception as e:
         logger.error(f"❌ Error en el proceso principal: {str(e)}")
         return False
+"""

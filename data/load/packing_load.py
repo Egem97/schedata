@@ -49,8 +49,8 @@ def balance_masa_load_data(access_token,tiempo_inicio):
         logger.error(f"❌ Error al subir el archivo")
         return False
     
-def reporte_produccion_load_data(access_token,tiempo_inicio):
-    df = reporte_produccion_costos_transform()
+def reporte_produccion_load_data(access_token,access_token_packing,tiempo_inicio):
+    df = reporte_produccion_costos_transform(access_token_packing)
     logger.info(f"📤 Subiendo archivo REPORTE DE PRODUCCION a OneDrive...")
     resultado = subir_archivo_con_reintento(
         access_token=access_token,

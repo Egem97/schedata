@@ -54,13 +54,9 @@ def list_folders(service, folder_id):
             
     files = results.get('files', [])
     dff = pd.DataFrame(files)
+
+    dff = dff[(dff["modifiedTime"] >= f"2025-09-01")]#{str(fecha_actual)}
     
-    
-   
-    dff = dff[dff["modifiedTime"] > f"{str(fecha_actual)}"]#{str(fecha_actual)}
-    #dff = dff.head(5)
-    #dff = dff.head(4)
-    #dff = dff.head(5)
     files_ = dff.to_dict(orient="records")
     del dff
     return files_
@@ -72,7 +68,7 @@ def list_images_in_folder(service, folder_id):
     results = service.files().list(
             q=query,
             pageSize=1000,
-            fields="nextPageToken, files(id, name, mimeType, size, webViewLink)"
+            fields="nextPageToken, files(id, name, mimeType, size, webViewLink, modifiedTime)"
     ).execute()
         
     files = results.get('files', [])
@@ -251,9 +247,11 @@ def extract_all_data():
                 'folder_id': folder['id'],
                 'folder_name': folder['name'],
                 'folder_webViewLink': folder['webViewLink'],
+                'folder_modifiedTime': folder.get('modifiedTime'),
                 'image_id': None,
                 'image_name': None,
                 'image_webViewLink': None,
+                'image_modifiedTime': None,
                 'image_base64': None,
                 'image_size_mb': 0
             })
@@ -275,9 +273,11 @@ def extract_all_data():
                     'folder_id': folder['id'],
                     'folder_name': folder['name'],
                     'folder_webViewLink': folder['webViewLink'],
+                    'folder_modifiedTime': folder.get('modifiedTime'),
                     'image_id': image['id'],
                     'image_name': image['name'],
                     'image_webViewLink': image.get('webViewLink'),
+                    'image_modifiedTime': image.get('modifiedTime'),
                     'image_base64': None,
                     'image_size_mb': original_size_mb
                 })
@@ -295,9 +295,11 @@ def extract_all_data():
                     'folder_id': folder['id'],
                     'folder_name': folder['name'],
                     'folder_webViewLink': folder['webViewLink'],
+                    'folder_modifiedTime': folder.get('modifiedTime'),
                     'image_id': image['id'],
                     'image_name': image['name'],
                     'image_webViewLink': image.get('webViewLink'),
+                    'image_modifiedTime': image.get('modifiedTime'),
                     'image_base64': base64_image,
                     'image_size_mb': optimized_size_mb
                 })
@@ -309,9 +311,11 @@ def extract_all_data():
                     'folder_id': folder['id'],
                     'folder_name': folder['name'],
                     'folder_webViewLink': folder['webViewLink'],
+                    'folder_modifiedTime': folder.get('modifiedTime'),
                     'image_id': image['id'],
                     'image_name': image['name'],
                     'image_webViewLink': image.get('webViewLink'),
+                    'image_modifiedTime': image.get('modifiedTime'),
                     'image_base64': None,
                     'image_size_mb': original_size_mb
                 })

@@ -16,32 +16,26 @@ from data.transform.costos_transform import costos_concesionario_packing_transfo
 from utils.helpers import create_format_excel_in_memory
 from data.transform.costos_transform import tipo_cambio_transform
 from data.load.costos_load import bd_costos_packing_load_data
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import sqlalchemy
+from sqlalchemy import create_engine, text
+import io
+from data.load.ingesta_bd import ingesta_imagenes_eva_calidad_bd
+#ingesta_imagenes_eva_calidad_bd()
 
-    
-styles(1)
-st.title("Pruebas Streamlit")
-access_token = get_access_token()
-#df = test_images_fcl_drive_extract(access_token)
-#st.dataframe(df)
-"""
 
-df =
-df["folder_name"] = df["folder_name"].str.strip()
-df = df.groupby(["folder_name"]).agg({
-        "cantidad_images": "sum",
-        "base64_complete": lambda x: x.tolist(),
-}).reset_index()
-"""
-from data.load.packing_load import save_images_fcl_drive_load_data
-save_images_fcl_drive_load_data(access_token)
 
-#from utils.get_sheets import extract_all_data
-#df = extract_all_data()
-#st.dataframe(df)
-#df = images_fcl_drive_extract_transform(access_token)
-#df.to_excel("images_fcl.xlsx",index=False)
-#st.dataframe(df)
-#df = images_fcl_drive_extract_transform(access_token)
-#st.dataframe(df)
+#access_token = get_access_token_packing()
+#access_token = get_access_token()
+
+#df = registro_phl_pt_formatos_transform(access_token)
+#st.write(df)
+
+
+
+
+
+
 
 
