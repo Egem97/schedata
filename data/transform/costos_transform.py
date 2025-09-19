@@ -107,14 +107,14 @@ def horas_trabajadas_obreros_packing_transform(access_token):
     df["FECHA"] = pd.to_datetime(df["FECHA"])
     df["SEMANA"] = df["FECHA"].dt.isocalendar().week
     df["Hrs. Laboradas - Planta"] = df["Hrs. Laboradas - Planta"].fillna(0)
-    df["Hrs. Laboradas - Planta"] = df["Hrs. Laboradas - Planta"].replace({"DM":0,"-":0,"":0})
+    df["Hrs. Laboradas - Planta"] = df["Hrs. Laboradas - Planta"].replace({"DM":0,"-":0,"":0,"FERIADO":0})
     df["LABOR"] = df["LABOR"].fillna("NO ESPECIFICADO")
     df["LABOR"] = df["LABOR"].str.strip()
     df["CODIGO LABOR"] = df["CODIGO LABOR"].fillna(0)
     #df["CODIGO LABOR"] = df["CODIGO LABOR"].str.strip()
     df = df[(df["CODIGO LABOR"].isin([209,210]))]#(df["LABOR"].isin(["PESADORES","ABASTECEDOR","PALETIZADORES","ENCAJADOR"]))&
-    df = df.groupby(["SEMANA","FECHA"])[["Hrs. Laboradas - Planta"]].sum().reset_index()
-    df = df.rename(columns={"Hrs. Laboradas - Planta":"HORAS LABORADAS"})
+    #df = df.groupby(["SEMANA","FECHA"])[["Hrs. Laboradas - Planta"]].sum().reset_index()
+    #df = df.rename(columns={"Hrs. Laboradas - Planta":"HORAS LABORADAS"})
     return df
 
 

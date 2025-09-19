@@ -15,7 +15,7 @@ from data.extract.costos_extract import *
 from data.transform.costos_transform import costos_concesionario_packing_transform
 from utils.helpers import create_format_excel_in_memory
 from data.transform.costos_transform import tipo_cambio_transform
-from data.load.costos_load import bd_costos_packing_load_data
+from data.load.costos_load import bd_costos_packing_load_data,seg_obreros_packing_transform
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import sqlalchemy
@@ -26,11 +26,13 @@ from data.load.ingesta_bd import *
 
 
 
-access_token = get_access_token_packing()
-#access_token = get_access_token()
+#access_token = get_access_token_packing()
+access_token = get_access_token()
 #ingesta_presentaciones_bd(access_token)
-df = reporte_produccion_extract(access_token)
-st.write(df)
+#df = horas_trabajadas_obreros_packing_transform(access_token)
+
+
+#st.write(df)
 
 
 
