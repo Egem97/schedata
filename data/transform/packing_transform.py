@@ -381,6 +381,12 @@ def reporte_produccion_transform(access_token):
     df["Fecha de cosecha"] = pd.to_datetime(df["Fecha de cosecha"],dayfirst=True).dt.strftime('%Y-%m-%d')
     df["Fecha de proceso"] = pd.to_datetime(df["Fecha de proceso"],dayfirst=True).dt.strftime('%Y-%m-%d')
 
+    # Reemplazar valores None con 0 en columnas numéricas
+    numeric_columns = df.select_dtypes(include=[np.number]).columns
+    df[numeric_columns] = df[numeric_columns].fillna(0)
+    df["OBSERVACION"] = df["OBSERVACION"].fillna("-")
+    #print(list(df.columns))
+    #print(df.head().info())
 
     return df
 ##### REPORTE DE PRODUCCION
@@ -445,4 +451,155 @@ def images_fcl_drive_extract_transform():
     return dff
     
 
+
+def evaluacion_calidad_pt_transform(access_token):
+    df = evaluacion_calidad_pt_extract(access_token)
+    df["FECHA DE MP"] = pd.to_datetime(df["FECHA DE MP"])
+    df["FECHA DE PROCESO"] = pd.to_datetime(df["FECHA DE PROCESO"])
+
+    # Fill NaN values with 0 for all float columns
+    float_columns = df.select_dtypes(include=['float64']).columns
+    df[float_columns] = df[float_columns].fillna(0)
+
+    # Limpiar datos de manera más eficiente
+    replacements = {
+        "MODULO ": {"`1": 1},
+        "TURNO ": {"Dia": 2, 111: 11},
+        "N° FCL": ['None', 'nan', 'NaN', 'NULL', 'null', ''],
+        "TRAZABILIDAD": ['None', 'nan', 'NaN', 'NULL', 'null', ''],
+        "OBSERVACIONES": ['None', 'nan', 'NaN', 'NULL', 'null', '']
+    }
     
+    # Aplicar reemplazos de manera vectorizada
+    for col, values in replacements.items():
+        if col in df.columns:
+            if isinstance(values, dict):
+                df[col] = df[col].replace(values)
+            else:
+                df[col] = df[col].replace(values, "-")
+    
+    # Fill NaN values
+    df["TURNO "] = df["TURNO "].fillna(0)
+    df["VARIEDAD"] = df["VARIEDAD"].fillna("NO ESPECIFICADO")
+    df["PRESENTACION "] = df["PRESENTACION "].fillna("NO ESPECIFICADO")
+    df["DESTINO"] = df["DESTINO"].fillna("NO ESPECIFICADO")
+    df["TIPO DE CAJA"] = df["TIPO DE CAJA"].fillna("-")
+    df["TRAZABILIDAD"] = df["TRAZABILIDAD"].fillna("-")
+    
+    # Strip strings de manera vectorizada
+    string_columns = ["VARIEDAD", "PRESENTACION ", "DESTINO", "TIPO DE CAJA", "TRAZABILIDAD", "N° FCL"]
+    for col in string_columns:
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.strip()
+            
+    # Mapeo de empresas
+    empresa_mapping = {
+        'GMH BERRIES S.A.C': 'AGRICOLA BLUE GOLD S.A.C.',
+        'BIG BERRIES S.A.C': 'AGRICOLA BLUE GOLD S.A.C.',
+        'CANYON BERRIES S.A.C': 'AGRICOLA BLUE GOLD S.A.C.',
+        'AGRICOLA BLUE GOLD S.A.C': 'AGRICOLA BLUE GOLD S.A.C.',
+        'EXCELLENCE FRUIT S.A.C': "SAN LUCAR S.A.",
+        'GAP BERRIES S.A.C': "SAN LUCAR S.A.",
+        'SAN EFISIO S.A.C': "SAN LUCAR S.A."
+    }
+    df["EMPRESA"] = df["PRODUCTOR"].replace(empresa_mapping)
+    
+    # Filtrar y limpiar - mejorar el filtrado para eliminar NaN
+    df = df[df["N° FCL"] != "-"]
+    df = df[df["N° FCL"] != "nan"]
+    df = df[df["N° FCL"] != "NaN"]
+    df = df[df["N° FCL"] != "None"]
+    df = df[df["N° FCL"].notna()]  # Eliminar valores NaN de pandas
+    df.columns = df.columns.str.strip()
+    
+    # Fill NaN en columnas numéricas
+    numeric_columns = df.select_dtypes(include=['float64', 'int64']).columns
+    df[numeric_columns] = df[numeric_columns].fillna(0)
+    df = df.reset_index(drop=True)
+
+    return df
+
+def phl_pt_all_tabla_transform(access_token):
+    abg,gap,san_lucar,san_efisio  = phl_pt_all_tabla_extract(access_token)
+    abg["TURNO"] = abg["TURNO"].fillna("0")
+    abg["TURNO"] = abg["TURNO"].astype(str)
+    abg["TURNO"] = abg["TURNO"].str.strip()
+    abg["TURNO"] = abg["TURNO"].replace("", "0")
+    abg["TURNO"] = abg["TURNO"].astype(int)
+
+    abg["LINEA"] = abg["LINEA"].replace("|", np.nan)
+    abg["PHL ORIGEN"] = abg["PHL ORIGEN"].fillna("-")
+    abg["PHL ORIGEN"] = abg["PHL ORIGEN"].str.strip()
+    abg["ESTADO"] = abg["PHL ORIGEN"].where(abg["PHL ORIGEN"].isin(["COMPLETO", "EN PROCESO"]))
+    abg["ESTADO"] = abg["ESTADO"].fillna(method='ffill')
+    abg = abg[abg["F. PRODUCCION"].notna()]
+    #######################################################
+    gap["PALLET ORIGUEN"] = gap["PALLET ORIGUEN"].fillna("0")
+    gap["PALLET ORIGUEN"] = gap["PALLET ORIGUEN"].astype(str)
+
+    gap["ESTADO"] = gap["PALLET ORIGUEN"].where(gap["PALLET ORIGUEN"].isin(["COMPLETO", "EN PROCESO"]))
+    gap["ESTADO"] = gap["ESTADO"].fillna(method='ffill')
+    gap = gap.rename(columns={
+        "PALLET ORIGUEN":"PHL ORIGEN",
+        "PRODUCTOR":"CLIENTE",
+        "PRESENTACION":"DESCRIPCION DEL PRODUCTO"
+    })
+    gap = gap[gap["F. PRODUCCION"].notna()]
+    #######################################################
+    san_lucar["PALLET ORIGUEN"] = san_lucar["PALLET ORIGUEN"].fillna("-")
+
+    san_lucar["PALLET ORIGUEN"] = san_lucar["PALLET ORIGUEN"].astype(str)
+    san_lucar["PALLET ORIGUEN"] = san_lucar["PALLET ORIGUEN"].str.strip()
+    san_lucar["ESTADO"] = san_lucar["PALLET ORIGUEN"].where(san_lucar["PALLET ORIGUEN"].isin(["COMPLETO", "EN PROCESO"]))
+    san_lucar["ESTADO"] = san_lucar["ESTADO"].fillna(method='ffill')
+    san_lucar["OBSERVACIONES"] = san_lucar["OBSERVACIONES"].fillna("-")
+    san_lucar["OBSERVACIONES"] = san_lucar["OBSERVACIONES"].astype(str)
+    san_lucar["OBSERVACIONES"] = san_lucar["OBSERVACIONES"].str.strip()
+
+    san_lucar["TRAZABILIDAD"] = san_lucar["TRAZABILIDAD"].fillna("-")
+    san_lucar["TRAZABILIDAD"] = san_lucar["TRAZABILIDAD"].astype(str)
+    san_lucar["TRAZABILIDAD"] = san_lucar["TRAZABILIDAD"].str.strip()
+    #
+    san_lucar = san_lucar.rename(columns={
+        "PALLET ORIGUEN": "PHL ORIGEN",
+        "PRODUCTOR": "CLIENTE",
+        "PRESENTACION": "DESCRIPCION DEL PRODUCTO",
+        "KG EXPORTABLES": "EXPORTABLE"
+    })
+    san_lucar = san_lucar[san_lucar["F. PRODUCCION"].notna()]
+    ###########################################################################
+    san_efisio = san_efisio[san_efisio["F. PRODUCCION"].notna()]
+    san_efisio["CORRELATIVO"]  = san_efisio["CORRELATIVO"].fillna("-")
+    san_efisio["CORRELATIVO"] = san_efisio["CORRELATIVO"].astype(str)
+    san_efisio["CORRELATIVO"] = san_efisio["CORRELATIVO"].str.strip()
+    san_efisio["PHL ORIGEN"] = san_efisio["PHL ORIGEN"].fillna("-")
+    san_efisio["PHL ORIGEN"] = san_efisio["PHL ORIGEN"].astype(str)
+    san_efisio["PHL ORIGEN"] = san_efisio["PHL ORIGEN"].str.strip()
+    san_efisio["ESTADO"] = "NO ESPECIFICADO"
+    df = pd.concat([abg, gap, san_lucar, san_efisio],ignore_index=True)
+    df = df.drop(columns=["CORRELATIVO","TRAZABILIDAD","OBSERVACIONES 2","ESQUINERO ADICONAL"])#,"ESQUINERO ADICIONAL"
+    df["SOBRE PESO"] = df["SOBRE PESO"].replace("ETIQUETA BASE (JORDANIA)",0)
+    df["SOBRE PESO"] = df["SOBRE PESO"].fillna(0)
+    df["SOBRE PESO"] = df["SOBRE PESO"].astype(int)
+    df["OBSERVACIONES"] = df["OBSERVACIONES"].astype(str)
+    #df["ESQUINERO ADICIONAL"] = df["ESQUINERO ADICIONAL"].fillna("-")
+    df["MATERIALES ADICIONALES"] = df["MATERIALES ADICIONALES"].fillna("-")
+    return df
+
+def presentaciones_transform(access_token):
+    data = listar_archivos_en_carpeta_compartida(
+        access_token,
+        "b!Mx2p-6knhUeohEjU-L-a3w-JZv1JawxAkEY9khgxn7hWjhq65fg_To08YnAwHSc0",
+        "01L5M4SATOWDS7G66DCNCYJLOJVNY7SPTV"
+    )
+    url_excel = get_download_url_by_name(data, "REGISTRO DE PHL - PRODUCTO TERMINADO -154.xlsm")
+    presentaciones_df = pd.read_excel(url_excel,sheet_name="BD1",skiprows=6)
+    presentaciones_df = presentaciones_df[presentaciones_df["DESCRIPCION DE PRODUCTO"].notna()]
+    presentaciones_df = presentaciones_df[['DESCRIPCION DE PRODUCTO', 'PESO caja', 'SOBRE PESO','ESQUINEROS ADIONALES',]]
+    presentaciones_df["ESQUINEROS ADIONALES"] = presentaciones_df["ESQUINEROS ADIONALES"].fillna(0)
+    presentaciones_df["DESCRIPCION DE PRODUCTO"] = presentaciones_df["DESCRIPCION DE PRODUCTO"].str.strip()
+    presentaciones_df["DESCRIPCION DE PRODUCTO"] = presentaciones_df["DESCRIPCION DE PRODUCTO"].astype(str)
+    presentaciones_df["PESO caja"] = presentaciones_df["PESO caja"].fillna(0)
+    presentaciones_df["SOBRE PESO"] = presentaciones_df["SOBRE PESO"].fillna(0)
+    
+    return presentaciones_df

@@ -53,9 +53,9 @@ def producto_terminado_extract():
     df = pd.DataFrame(data[1:], columns=data[0])
     df.to_excel("producto_terminado2.xlsx", index=False)
     return df
-
+##################################################################################
 def reporte_produccion_extract(access_token):
-    logger.info(f"📁 Obteniendo datos de images fcl drive: ")
+    logger.info(f"📁 Obteniendo datos de reporte de produccion: ")
     data = listar_archivos_en_carpeta_compartida(
         access_token,
         "b!8PNDXtlxLkaPga8GOB87BU1-H5NesxJIgOJah3G83Hm5hbrxL1sgT7Xj5bnL_Hi9",
@@ -66,7 +66,23 @@ def reporte_produccion_extract(access_token):
         logger.error(f"❌ No se encontró el archivo de images fcl drive:")
         return False
     
-    return pd.read_excel(url_excel,sheet_name="RP ")
+    return pd.read_excel(url_excel,sheet_name="RP")#
+
+def evaluacion_calidad_pt_extract(access_token):
+    logger.info(f"📁 Obteniendo datos de evaluacion de calidad: ")
+    data = listar_archivos_en_carpeta_compartida(
+        access_token,
+        "b!k0xKW2h1VkGnxasDN0z40PeA8yi0BwBKgEf_EOEPStmAWVEVjX8MQIydW1yMzk1b",
+        "01SPKVU4I6RWNBBAVFIJF3GHBOYOFMUKZS"
+    )
+    url_excel = get_download_url_by_name(data, "BD EVALUACION DE CALIDAD DE PRODUCTO TERMINADO.xlsx")
+    if not url_excel:
+        logger.error(f"❌ No se encontró el archivo de evaluacion calidad pt:")
+        return False
+    
+    return pd.read_excel(url_excel,sheet_name="CALIDAD PRODUCTO TERMINADO")
+
+########################################################################################
 """
     logger.info(f"📁 Obteniendo datos de Reporte de Produccion: ")
     data = read_sheet("1OCBDYRmboSgcQIH0zJQqbAnwTB8f9zSIOaUWBWUXaUM", "RP")
@@ -129,3 +145,22 @@ def test_images_fcl_drive_extract(access_token):
     
     return pd.read_parquet(url_parquet)
 
+def phl_pt_all_tabla_extract(access_token):
+    
+    logger.info(f"📁 Obteniendo datos de PHL PT: ")
+    data = listar_archivos_en_carpeta_compartida(
+        access_token,
+        "b!Mx2p-6knhUeohEjU-L-a3w-JZv1JawxAkEY9khgxn7hWjhq65fg_To08YnAwHSc0",
+        "01L5M4SATOWDS7G66DCNCYJLOJVNY7SPTV"
+    )
+    url_excel = get_download_url_by_name(data, "REGISTRO DE PHL - PRODUCTO TERMINADO -154.xlsm")
+    
+     
+    return (
+        pd.read_excel(url_excel,sheet_name="GMH-ABG-CYN"),
+        pd.read_excel(url_excel,sheet_name="GAP BERRIES"),
+        pd.read_excel(url_excel,sheet_name="SAN LUCAR"),
+        pd.read_excel(url_excel,sheet_name="SAN EFISIO"),
+    )
+    
+ 

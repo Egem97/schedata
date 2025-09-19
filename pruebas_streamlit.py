@@ -21,21 +21,31 @@ from psycopg2.extras import RealDictCursor
 import sqlalchemy
 from sqlalchemy import create_engine, text
 import io
-from data.load.ingesta_bd import ingesta_imagenes_eva_calidad_bd
+from data.load.ingesta_bd import *
 #ingesta_imagenes_eva_calidad_bd()
 
 
 
-#access_token = get_access_token_packing()
+access_token = get_access_token_packing()
 #access_token = get_access_token()
-
-#df = registro_phl_pt_formatos_transform(access_token)
-#st.write(df)
-
-
+#ingesta_presentaciones_bd(access_token)
+df = reporte_produccion_extract(access_token)
+st.write(df)
 
 
 
 
 
 
+
+
+
+
+
+
+"""
+st.title("Ingesta de Imagenes Evaluacion Calidad")
+st.write("Esta ingesta es para las imagenes de la evaluacion de calidad de producto terminado")
+ingesta_imagenes_eva_calidad_bd()
+st.success("✅ Ingesta completada")
+"""

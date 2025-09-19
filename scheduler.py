@@ -83,15 +83,13 @@ def configurar_scheduler():
         schedule.every().day.at("08:00").do(ejecutar_proceso_tipo_cambio)
         logger.info(f"💱 Programado proceso de tipo de cambio para ejecutarse diariamente a las 08:00 AM")
         
-        schedule.every(5).minutes.do(ejecutar_proceso_principal)
-        logger.info(f"⏰ Programado proceso principal cada 5 minutos")
+        #schedule.every(5).minutes.do(ejecutar_proceso_principal)
+        #logger.info(f"⏰ Programado proceso principal cada 5 minutos")
         
-        schedule.every(17).minutes.do(ejecutar_proceso_costos )
+        schedule.every(10).minutes.do(ejecutar_proceso_costos )
         logger.info(f"⏰ Programado proceso costos cada 17 minutos")
         
-        #schedule.every(23).minutes.do(ejecutar_proceso_bm_packing)
-        #logger.info(f"⏰ Programado proceso BM packing cada 23 minutos")
-        #schedule.every(15).minutes.do(ejecutar_proceso_images_fcl)  
+        
     except Exception as e:
         logger.error(f"Error al configurar scheduler: {str(e)}")
         return False
@@ -163,7 +161,7 @@ def main():
     if ejecutar_inicial:
         logger.info("🔄 Ejecutando procesos iniciales...")
         try:
-            ejecutar_proceso_principal()
+            #ejecutar_proceso_principal()
             ejecutar_proceso_costos()
             #ejecutar_proceso_bm_packing()
             #ejecutar_proceso_images_fcl()

@@ -55,7 +55,7 @@ def list_folders(service, folder_id):
     files = results.get('files', [])
     dff = pd.DataFrame(files)
 
-    dff = dff[(dff["modifiedTime"] >= f"2025-09-01")]#{str(fecha_actual)}
+    dff = dff[(dff["modifiedTime"] >= f"2025-09-17")]#{str(fecha_actual)}
     
     files_ = dff.to_dict(orient="records")
     del dff
